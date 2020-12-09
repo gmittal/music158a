@@ -2,31 +2,6 @@
 
 import synthesis
 
-class Ocean:
-    """Gently oscillating white noise."""
-    def __init__(self):
-        pass
-
-
-class Wind(Voice):
-    """Wind voice.
-    
-    Voice object with very low harmonicity to create whoosh sound.
-    """
-    def __init__(self, nodes=[], components=10):
-        super().__init__(nodes=nodes
-                         mode='sinusoid',
-                         harmonicity=0.05,
-                         amplitudes=[1/components for _ in range(components)],
-                         components=components)
-
-
-class Rain:
-    """Linear combination of noise varibales."""
-    def __init__(self):
-        pass
-
-
 class Voice:
     """Polyphonic instrument voice.
 
@@ -109,4 +84,29 @@ class Percussion:
         pass
 
     def play_notes(self):
+        pass
+
+
+class Ocean:
+    """Gently oscillating white noise."""
+    def __init__(self):
+        pass
+
+
+class Wind(Voice):
+    """Wind voice.
+    
+    Voice object with very low harmonicity to create whoosh sound.
+    """
+    def __init__(self, nodes=[], components=10):
+        super().__init__(nodes=nodes,
+                         mode='sinusoid',
+                         harmonicity=0.05,
+                         amplitudes=[1/components for _ in range(components)],
+                         components=components)
+
+
+class Rain:
+    """Linear combination of noise varibales."""
+    def __init__(self):
         pass
