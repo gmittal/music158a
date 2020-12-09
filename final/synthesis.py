@@ -1,9 +1,14 @@
-"""Timbre and synthesis-related utilities."""
+"""Timbre and waveform synthesis-related utilities."""
 
 import pickle
 import numpy as np
 
 import utils
+
+
+def harmonic_series(fundamental, harmonicity, n):
+    return [fundamental * i ** harmonicity for i in range(n)]
+
 
 def get_ddsp_parameters(path):
     """Unpacks DDSP timbre parameters object.
@@ -37,12 +42,16 @@ def ddsp_additive_synth(f0, harmonic_distribution):
     return [float(o) for o in output]  # required for OSC compatibility
 
 
+def ddsp_filter_synth(f0, noise_distribution):
+    raise NotImplementedError("Not implemented.")
+
+
 def additive_synth(f0, harmonicity, amplitudes, oscillators=60):
     """Additive synthesis.
     
     Args:
         f0: Fundamental frequency.
-        harmonicity: Harmonic series decay constant (Cella et al.)
+        harmonicity: Harmonic series decay constant (Cella et al.).
         amplitudes: List of oscillator amplitudes.
         oscillators: Number of oscillators.
     
@@ -50,5 +59,22 @@ def additive_synth(f0, harmonicity, amplitudes, oscillators=60):
         Parameters for sinusoids~ waveform.
     """
     assert len(amplitudes) == oscillators
-    freqs = [f0 * i ** harmonicity for i in range(oscillators)]
+    freqs = harmonic_series(f0, harmonicity, oscillators)
     return utils.interleave(freqs, amplitudes)
+
+
+def filter_synth(f0, harmonicity, amplitudes, decay_rates, resonators=60):
+    """Resonator-based synthesis.
+
+    Args:
+        f0: Fundamental frequency.
+        harmonicity: Harmonic series decay constant (Cella et al.).
+        amplitudes: List of oscillator amplitudes.
+        resonators: Number of resonators.
+    
+    Returns:
+        Parameters for resonators~ waveform.
+    """
+    assert len(amplitudes) == len(decay_rates) == resonators
+    freqs = harmonic_series(f0, harmonicity, resonators)
+    return utils.interleave(freqs, amplitudes, decay_rates)
