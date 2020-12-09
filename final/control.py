@@ -15,6 +15,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 # Custom modules.
 import utils
 import synthesis
+import instruments
 
 FLAGS = flags.FLAGS
 
@@ -87,11 +88,21 @@ def main(argv):
     dispatcher.map("/clock", time_handler)
     dispatcher.set_default_handler(signal_handler)
 
-    # z = ddsp_additive_synth(281, get_ddsp_parameters('tenor_sax.pkl'))
-    # send('/oscillators', z)
-    # time.sleep(3)
-    # amps = [0.5 for _ in range(60)]
-    # send('/oscillators', additive_synth(300, 0.5, amps))
+    z = instruments.Voice(nodes=['/o1', '/o2', '/o3'],
+                      mode='sinusoid', 
+                      harmonicity=0.08, 
+                      amplitudes=[0.01 for _ in range(60)])
+    # z.play_notes(send, fundamentals=[262, 327.5, 393])
+    z.set_notes(send, fundamentals=[240])
+    time.sleep(1)
+    z.set_notes(send, fundamentals=[0, 0, 0])
+
+    # i = 0.01
+    # while True:
+    #     z.harmonicity += i
+    #     z.play_notes(send, fundamentals=[262, 327.5, 393])
+    #     time.sleep(0.1)
+    
 
     # Start server
     server = BlockingOSCUDPServer((FLAGS.server_ip, FLAGS.server_port), dispatcher)

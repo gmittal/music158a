@@ -7,7 +7,7 @@ import utils
 
 
 def harmonic_series(fundamental, harmonicity, n):
-    return [fundamental * i ** harmonicity for i in range(n)]
+    return [fundamental * i ** harmonicity for i in range(1, n + 1)]
 
 
 def get_ddsp_parameters(path):
