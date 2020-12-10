@@ -244,10 +244,10 @@ def world():
         y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
         stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
 
-    for x in range(0, 100, 1):
-        for y in range(0, 100, 1):
-            
-            stage.move(x / 100., y / 100.)
+    # Spiral sweep
+    for coord in utils.spiral(0, 0.3, 2, 100):
+        stage.move(*coord)
+    stage.move(0.5, 0.5)
 
     rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'])
     rain.set_notes(send, [1, 1, 1, 1])

@@ -1,5 +1,8 @@
 """Common data utilities."""
 
+import math
+
+
 def interleave(*lists):
     """Interleaves lists of the same length.
 
@@ -16,3 +19,23 @@ def interleave(*lists):
     for group in zip(*lists):
         result += list(group)
     return result
+
+
+def spiral(start_radius=0.3, 
+           end_radius=0.3, 
+           revolutions=1, 
+           steps_per_revolution=100):
+    """Spiral coordinate generator.
+    
+    Returns:
+        Streaming iterator of coordinates.
+    """
+    radius = start_radius
+    center_x, center_y = 0.5, 0.5
+    inc = (end_radius - start_radius) / (revolutions * steps_per_revolution)
+    for r in range(revolutions):
+        for i in range(steps_per_revolution):
+            radius += inc
+            x = radius * math.cos(i * 2 * math.pi / steps_per_revolution) + center_x
+            y = radius * math.sin(i * 2 * math.pi / steps_per_revolution) + center_y
+            yield (x, y)
