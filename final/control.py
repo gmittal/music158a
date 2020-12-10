@@ -85,6 +85,16 @@ def _signal_handler(binding, *args):
     state['bindings'][binding] = args
 
 
+class MIDIController:
+    """User-controlled synth wrapper."""
+
+    def __init__(self, input_binding='/midi', instrument):
+        self.binding = input_binding
+        self.synth = instrument
+
+    
+
+
 class Stage:
     """Sound stage abstraction for RBFI."""
 
