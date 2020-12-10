@@ -86,12 +86,13 @@ def _signal_handler(binding, *args):
 class Stage:
     """Sound stage abstraction for RBFI."""
 
-    def __init__(self, cmd_binding,
-                       stage_binding, 
-                       size=0.5, 
-                       decay=0.5, 
-                       damping=0.9, 
-                       diffusion=0.4):
+    def __init__(self, 
+                 cmd_binding,
+                 stage_binding, 
+                 size=0.5, 
+                 decay=0.5, 
+                 damping=0.9,                  
+                 diffusion=0.4):
         self.binding = cmd_binding
         self.room = stage_binding
         self.size = size
@@ -187,29 +188,6 @@ def main(argv):
     dispatcher.map("/clock", time_handler)
     dispatcher.map("/frame", frame_handler)
     dispatcher.set_default_handler(signal_handler)
-
-    # z = instruments.Voice(nodes=['/o1', '/o2', '/o3'],
-    #                   mode='sinusoid', 
-    #                   harmonicity=0.08, 
-    #                   amplitudes=[0.01 for _ in range(60)])
-    # # z.play_notes(send, fundamentals=[262, 327.5, 393])
-    # # z.set_notes(send, fundamentals=[240])
-    # # time.sleep(1)
-    # # z.set_notes(send, fundamentals=[0, 0, 0])
-
-    # stage = Stage('/stage_cmd', '/stage_bg')
-    # stage.clear()
-
-
-    # for i in range(10):
-    #     stage.add_member(f'a{i}', x=0.1 * i, y=0.1 * i, inner_radius=0.1 / (i + 1), outer_radius=0.2 / (i + 1))
-    #     time.sleep(0.2)
-
-    # for i in range(10):
-    #     stage.modify_member(f'a{i}', x=0.1 * i + 0.2)
-    #     time.sleep(0.2)
-    # time.sleep(1)
-    # stage.clear()
 
     # Start server
     server = BlockingOSCUDPServer((FLAGS.server_ip, FLAGS.server_port), dispatcher)
