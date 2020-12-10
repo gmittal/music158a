@@ -1,5 +1,6 @@
 """Control tower."""
 
+import math
 import random
 import time
 import threading
@@ -190,25 +191,32 @@ def send(binding, value):
 def world():
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
-    for x in [-1, 1]:
-        for y in [-1, 1]:
-            stage.add_member('({}, {})'.format(x, y), 0.5 + x * 0.1, 0.5 + y * 0.1, 0.05, 0.2)
 
-    wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'], components=500)
+    radius = 0.3
+    center_x, center_y = 0.5, 0.5
+    for i in range(3):
+        x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
+        y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
+        stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
+
+    # return
+
+    wind = instruments.Wind(nodes=['/p1m1', '/p1m2'], components=100)
+    wind.amps = [0.005 for _ in range(100)]
+    wind.set_notes(send, [500, 80])
+    # time.sleep(5)
     # wind.silence_nodes(send)
 
-
-    wind.amplitudes = [0 for _ in range(500)]
-    wind.set_notes(send, [0.1, 0.1, 0.1, 0.1])
-    # time.sleep(5)
-
-
-    rain = instruments.Rain(nodes=['/p3m1'])
+    # TODO: find method to stop custom patches
+    rain = instruments.Rain(nodes=['/p2m1'])
     rain.set_notes(send, [1])
+    time.sleep(5)
     rain.silence_nodes(send)
 
     chirp = instruments.Chirps(nodes=['/p4m1'])
     chirp.set_notes(send, [1])
+    time.sleep(5)
+    chirp.silence_nodes(send)
 
 
 def main(argv):

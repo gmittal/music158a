@@ -38,29 +38,31 @@ class Voice:
         self.ddsp_params = None
         self.timbre_fn = None
         self.nodes = nodes
+        self.control_bits = [0, 0, 0]
 
         assert len(self.nodes) <= 4, 'More than 4 nodes is not supported at this time.'
 
         if mode == 'sinusoid':
             assert harmonicity is not None
             assert amplitudes is not None
-            self.timbre_fn = lambda fundamental: [0, 0, 0] + synthesis.additive_synth(fundamental, 
-                                                                          self.harmonicity, 
-                                                                          self.amps, 
-                                                                          oscillators=self.voices)
+            self.timbre_fn = lambda fundamental: self.control_bits + synthesis.additive_synth(fundamental, 
+                                                                                              self.harmonicity, 
+                                                                                              self.amps, 
+                                                                                              oscillators=self.voices)
         elif mode == 'resonator':
             assert decays is not None
             assert harmonicity is not None
             assert amplitudes is not None
-            self.timbre_fn = lambda fundamental: [1, 1, 0] + synthesis.filter_synth(fundamental, 
-                                                                        self.harmonicity, 
-                                                                        self.amps,
-                                                                        self.decays,
-                                                                        oscillators=self.voices)
+            self.control_bits = [1, 1, 0]
+            self.timbre_fn = lambda fundamental: self.control_bits + synthesis.filter_synth(fundamental, 
+                                                                                            self.harmonicity, 
+                                                                                            self.amps,
+                                                                                            self.decays,
+                                                                                            oscillators=self.voices)
         elif mode == 'ddsp':
             assert components == 60 and ddsp_ckpt is not None
             self.ddsp_params = synthesis.get_ddsp_parameters(ddsp_ckpt)
-            self.timbre_fn = lambda fundamental: [0, 0, 0] + synthesis.ddsp_additive_synth(fundamental, self.ddsp_params)
+            self.timbre_fn = lambda fundamental: self.control_bits + synthesis.ddsp_additive_synth(fundamental, self.ddsp_params)
         else:
             raise ValueError(f'Unsupported mode: {mode}')
 
@@ -91,14 +93,8 @@ class Percussion:
         pass
 
 
-class Ocean:
-    """Gently oscillating white noise."""
-    def __init__(self):
-        pass
-
-
 class Wind(Voice):
-    """Wind voice.
+    """Wind (literal whoosh) voice.
     
     Voice object with very low harmonicity to create whoosh sound.
     """
@@ -118,8 +114,16 @@ class Rain(Voice):
                          harmonicity=0.05,
                          amplitudes=[1],
                          components=1)
-        self.timbre_fn = lambda fundamental: [0, 0, 1]
+        self.control_bits = [0, 0, 1]
+
+    def set_notes(self, send_fn, fundamentals=[]):
+        self.control_bits = [0, 0, 1]
+        super().set_notes(send_fn, fundamentals)
     
+    def silence_nodes(self, send_fn):
+        self.control_bits = [0, 0, 0]
+        super().silence_nodes(send_fn)
+
 
 class Chirps(Voice):
     """Pre-built chirps patch."""
@@ -129,5 +133,13 @@ class Chirps(Voice):
                          harmonicity=0.05,
                          amplitudes=[1],
                          components=1)
-        self.timbre_fn = lambda fundamental: [0, 0, 2]
+        self.control_bits = [0, 0, 2]
+
+    def set_notes(self, send_fn, fundamentals=[]):
+        self.control_bits = [0, 0, 2]
+        super().set_notes(send_fn, fundamentals)
+    
+    def silence_nodes(self, send_fn):
+        self.control_bits = [0, 0, 0]
+        super().silence_nodes(send_fn)
     
