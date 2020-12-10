@@ -32,6 +32,9 @@ class Voice:
         self.voices = components
         self.ddsp_ckpt = ddsp_ckpt
 
+        if type(amplitudes).__name__ == 'float' or type(amplitudes).__name__ == 'int':
+            self.amps = [amplitudes for _ in range(components)]
+
         self.ddsp_params = None
         self.timbre_fn = None
         self.nodes = nodes
@@ -108,7 +111,7 @@ class Wind(Voice):
 
 
 class Rain(Voice):
-    """Pre-built rain patch selector."""
+    """Pre-built rain patch."""
     def __init__(self, nodes=[], components=1):
         super().__init__(nodes=nodes,
                          mode='sinusoid',
@@ -116,4 +119,15 @@ class Rain(Voice):
                          amplitudes=[1],
                          components=1)
         self.timbre_fn = lambda fundamental: [0, 0, 1]
+    
+
+class Chirps(Voice):
+    """Pre-built chirps patch."""
+    def __init__(self, nodes=[], components=1):
+        super().__init__(nodes=nodes,
+                         mode='sinusoid',
+                         harmonicity=0.05,
+                         amplitudes=[1],
+                         components=1)
+        self.timbre_fn = lambda fundamental: [0, 0, 2]
     
