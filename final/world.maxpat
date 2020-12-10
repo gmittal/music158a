@@ -40,6 +40,53 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-64",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 22.0, 536.0, 55.0, 22.0 ],
+					"text" : "s frames"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-63",
+					"maxclass" : "newobj",
+					"numinlets" : 0,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 21.933319999999981, 383.0, 53.0, 22.0 ],
+					"text" : "r frames"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-62",
+					"maxclass" : "newobj",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "float" ],
+					"patching_rect" : [ 22.0, 504.0, 81.0, 22.0 ],
+					"text" : "snapshot~ 50"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-39",
+					"maxclass" : "newobj",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "signal" ],
+					"patching_rect" : [ 21.933319999999981, 474.0, 70.0, 22.0 ],
+					"text" : "cycle~ 0.01"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"attr" : "always_draw_labels",
 					"displaymode" : 8,
 					"fontname" : "Arial",
@@ -712,18 +759,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-39",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 21.933319999999981, 383.0, 70.0, 22.0 ],
-					"text" : "cycle~ 0.01"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-49",
 					"maxclass" : "newobj",
 					"numinlets" : 0,
@@ -765,7 +800,7 @@
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 379.0, 304.5, 75.0, 22.0 ],
+					"patching_rect" : [ 384.0, 329.5, 75.0, 22.0 ],
 					"text" : "rain"
 				}
 
@@ -793,7 +828,7 @@
 					"parameter_enable" : 0,
 					"patching_rect" : [ 559.0, 505.0, 293.0, 27.0 ],
 					"setminmax" : [ 0.0, 1.0 ],
-					"size" : 2,
+					"size" : 4,
 					"slidercolor" : [ 0.996078431372549, 0.047058823529412, 0.047058823529412, 1.0 ],
 					"thickness" : 5
 				}
@@ -1208,7 +1243,7 @@
 , 			{
 				"box" : 				{
 					"always_draw_circles" : 4294967297,
-					"always_draw_labels" : 1,
+					"always_draw_labels" : 17179869185,
 					"color" : [ 1.0, 1.0, 1.0, 1.0 ],
 					"fontface" : 0,
 					"fontname" : "Arial",
@@ -1220,7 +1255,7 @@
 					"outlettype" : [ "", "", "", "", "" ],
 					"parameter_enable" : 0,
 					"patching_rect" : [ 559.0, 169.0, 293.0, 293.0 ],
-					"spaces" : [ "space", 2, 0.80761602837947, 0.60258897375436, "/p0", 0.75, 0.375, 0.1875, 0.0, 3.321928094887362, 74615.449486003053607, 0.05, 0.2, 0, 0.597909448481123, 0.064100622229325, "/p1", 0.75, 0.5625, 0.1875, 0.0, 3.321928094887362, 74615.449486003053607, 0.05, 0.2, 0 ]
+					"spaces" : [ "space", 4, 0.400000005960464, 0.400000005960464, "(-1, -1)", 0.75, 0.375, 0.1875, 0.0, 3.321928094887362, 74615.45317951166362, 0.050000000745058, 0.200000002980232, 0, 0.400000005960464, 0.600000023841858, "(-1, 1)", 0.75, 0.5625, 0.1875, 0.0, 3.321928094887362, 74615.45317951166362, 0.050000000745058, 0.200000002980232, 0, 0.600000023841858, 0.400000005960464, "(1, -1)", 0.75, 0.75, 0.1875, 0.0, 3.321928094887362, 74615.45317951166362, 0.050000000745058, 0.200000002980232, 0, 0.600000023841858, 0.600000023841858, "(1, 1)", 0.5625, 0.75, 0.1875, 0.0, 3.321928094887362, 74615.45317951166362, 0.050000000745058, 0.200000002980232, 0 ]
 				}
 
 			}
@@ -1441,7 +1476,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-18", 0 ],
+					"destination" : [ "obj-62", 0 ],
 					"source" : [ "obj-39", 0 ]
 				}
 
@@ -1550,6 +1585,20 @@
 					"destination" : [ "obj-1", 0 ],
 					"midpoints" : [ 871.5, 192.0, 852.0, 192.0, 852.0, 156.0, 657.0, 156.0, 657.0, 165.0, 568.5, 165.0 ],
 					"source" : [ "obj-61", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-64", 0 ],
+					"source" : [ "obj-62", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-18", 0 ],
+					"source" : [ "obj-63", 0 ]
 				}
 
 			}
