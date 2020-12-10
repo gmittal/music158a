@@ -199,8 +199,6 @@ def world():
         y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
         stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
 
-    # return
-
     wind = instruments.Wind(nodes=['/p1m1', '/p1m2'], components=100)
     wind.amps = [0.005 for _ in range(100)]
     wind.set_notes(send, [500, 80])
