@@ -16,6 +16,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 # Custom modules.
 import utils
 import synthesis
+import symbolic
 import instruments
 
 FLAGS = flags.FLAGS
@@ -253,8 +254,16 @@ def world():
     rain.set_notes(send, [1, 1, 1, 1])
     time.sleep(1)
 
-    bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=1, components=10)
-    bass.play_sequence(send, state['clock_event_schedule'], notes=[[40], [50], [60], [70]])
+    bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.3, components=10)
+
+    midi = [29, -1, 30, -1, 31, -1, 32, -1, -1, 30, -1, -1, 32, -1, -1, -1]
+    midi += [34, -1, 35, -1, 36, -1, 37, -1, -1, 32, -1, -1, 35, -1, -1, -1]
+    midi += midi[:] + midi[:] + midi[:]
+
+    notes = []
+    for i in midi:
+        notes.append([symbolic.mtof(i)])
+    bass.play_sequence(send, state['clock_event_schedule'], notes=notes)
     bass.play_sequence(send, state['clock_event_schedule'], notes=[[0]])
 
     # Scene 3

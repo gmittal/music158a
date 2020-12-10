@@ -74,12 +74,17 @@ class Voice:
         
         for i, fundamental in enumerate(fundamentals):
             node = self.nodes[i]
+            if fundamental == 0:
+                continue
             params = self.timbre_fn(fundamental)
             send_fn(node, params)
 
     def silence_nodes(self, send_fn):
         """Silence all nodes attached to this instrument."""
+        # old_amps = self.amps
+        # self.amps = [0 for _ in range(self.voices)]
         self.set_notes(send_fn, fundamentals=[0] * len(self.nodes))
+        # self.amps = old_amps
 
     def play_sequence(self, send_fn, event_queue, notes=[[1]]):
         """Plays sequence at the granularity of the clock."""
@@ -119,14 +124,12 @@ class AcousticBass(ElectricBass):
     """Acoustic bass."""
 
     def __init__(self, nodes=[], pluck=True, volume=0.5, components=10):
-        super().__init__(nodes=nodes,
-                         mode='resonator',
-                         harmonicity=0.0,
-                         amplitudes=[volume for _ in range(components)],
-                         decays=[10 for _ in range(components)],
-                         pluck=pluck,
+        super().__init__(nodes=nodes, 
+                         pluck=pluck, 
+                         volume=volume, 
                          components=components)
-        self.harmonicity = 0.0
+        self.harmonicity = 0.04
+        self.decays = [10 for _ in range(components)]
 
 
 
