@@ -189,14 +189,14 @@ def send(binding, value):
 
 def world():
     stage = Stage('/stage_cmd', '/stage_reverb')
-    # stage.clear()
-    # for x in [-1, 1]:
-    #     for y in [-1, 1]:
-    #         stage.add_member('({}, {})'.format(x, y), 0.5 + x * 0.1, 0.5 + y * 0.1, 0.05, 0.2)
+    stage.clear()
+    for x in [-1, 1]:
+        for y in [-1, 1]:
+            stage.add_member('({}, {})'.format(x, y), 0.5 + x * 0.1, 0.5 + y * 0.1, 0.05, 0.2)
 
-    wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'], components=100)
-    wind.set_notes(send, [220, 40, 90, 364])
-    time.sleep(5)
+    # wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'], components=100)
+    # wind.set_notes(send, [220, 40, 90, 364])
+    # time.sleep(5)
     # wind.silence_nodes(send)
 
     # ocean = instruments.Wind(nodes=['/p2m1', '/p2m2', '/p2m3', '/p2m4'], components=500)
