@@ -37,8 +37,8 @@ state = {
     'bindings': {},
     'clock_hooks': [], # functions called once a beat
     'clock_event_schedule': [], # queue of events to fire each beat
-    'continuous_hooks': [], # functions called once a frame
-    'continuous_event_schedule': [] # continuous event queue (??)
+    'frame_hooks': [], # functions called once a frame
+    'frame_event_schedule': [] # continuous event queue (??)
 }
 
 
@@ -76,8 +76,8 @@ def _signal_handler(binding, *args):
         binding: An o.dot binding string.
         args: A list of values received for that binding.
     """
-    print(binding, args)
     if not state['connected']:
+        print('Connection successful.')
         state['start_time'] = time.time()
         state['connected'] = True
     state['bindings'][binding] = args
@@ -131,8 +131,10 @@ class Stage:
                   'inner_radius': inner_radius,
                   'outer_radius': outer_radius}
         self.members.append(member)
-        send(self.binding, ['add_point', 'name'] + self._dict_to_point_cmd(member))
         
+        hook = lambda: send(self.binding, ['add_point', 'name'] + self._dict_to_point_cmd(member))
+        state['frame_event_schedule'].append(hook)
+
     def modify_member(self, name, x=None, y=None, inner_radius=None, outer_radius=None):
         member = self.get_member(name)
         if x is not None:
@@ -143,11 +145,14 @@ class Stage:
             member['inner_radius'] = inner_radius
         if outer_radius is not None:
             member['outer_radius'] = outer_radius
-        send(self.binding, self._dict_to_point_cmd(member))
 
+        hook = lambda: send(self.binding, self._dict_to_point_cmd(member))
+        state['frame_event_schedule'].append(hook)
+        
     def clear(self):
         self.members = []
-        send(self.binding, 'clear')
+        hook = lambda: send(self.binding, 'clear')
+        state['frame_event_schedule'].append(hook)
 
 
 def time_step():
@@ -167,6 +172,11 @@ def frame_step():
     for hook in state['frame_hooks']:
         hook()
 
+    # Remove latest event from queue
+    if len(state['frame_event_schedule']) > 0:
+        event = state['frame_event_schedule'].pop(0)
+        event()
+
 
 def send(binding, value):
     """Send message to client."""
@@ -175,23 +185,38 @@ def send(binding, value):
     client.send_message(binding, value)
 
 
+def world():
+    stage = Stage('/stage_cmd', '/stage_reverb')
+    stage.clear()
+    for i in range(4):
+        print('potato')
+        stage.add_member('potato{}'.format(i), 0.25 * i, 0.2 * i, 0.1, 0.1)
+
+
 def main(argv):
     global client
     del argv  # unused
 
     # Connect to client
     client = udp_client.SimpleUDPClient(FLAGS.client_ip, FLAGS.client_port)
-    
+    print(f'Connected to client at {FLAGS.client_ip}:{FLAGS.client_port}')
+
     # Set up handlers
     dispatcher = Dispatcher()
-    dispatcher.map("/*", signal_handler)
-    dispatcher.map("/clock", time_handler)
-    dispatcher.map("/frame", frame_handler)
-    dispatcher.set_default_handler(signal_handler)
+    dispatcher.map("/*", _signal_handler)
+    dispatcher.map("/clock", _time_handler)
+    dispatcher.map("/frame", _frame_handler)
+    dispatcher.set_default_handler(_signal_handler)
 
     # Start server
     server = BlockingOSCUDPServer((FLAGS.server_ip, FLAGS.server_port), dispatcher)
-    server.serve_forever()  # Blocks forever
+    print(f'Starting server at {FLAGS.server_ip}:{FLAGS.server_port}')
+    thread = threading.Thread(target=server.serve_forever)
+    thread.start()
+
+    # Begin the world
+    event_loop = threading.Thread(target=world)
+    event_loop.start()
 
 
 if __name__ == '__main__':
