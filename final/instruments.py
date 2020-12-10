@@ -74,24 +74,26 @@ class Voice:
         
         for i, fundamental in enumerate(fundamentals):
             node = self.nodes[i]
-            if fundamental == 0:
+            if fundamental == 0:  # HACK: MIDI "no event"
                 continue
             params = self.timbre_fn(fundamental)
             send_fn(node, params)
 
     def silence_nodes(self, send_fn):
         """Silence all nodes attached to this instrument."""
-        # old_amps = self.amps
-        # self.amps = [0 for _ in range(self.voices)]
-        self.set_notes(send_fn, fundamentals=[0] * len(self.nodes))
-        # self.amps = old_amps
+        self.set_notes(send_fn, fundamentals=[1e-3] * len(self.nodes))
 
-    def play_sequence(self, send_fn, event_queue, notes=[[1]]):
+    def play_sequence(self, send_fn, event_queue, notes=[[1]], events=False):
         """Plays sequence at the granularity of the clock."""
+        events = []
         for note in notes:
             def hook(n):
                 return lambda: self.set_notes(send_fn, n)
-            event_queue.append(hook(note))
+            events.append(hook(note))
+
+        if not events:
+            event_queue.extend(events)
+        return events
 
 
 class Percussion(Voice):
@@ -112,7 +114,7 @@ class ElectricBass(Voice):
                          mode='resonator',
                          harmonicity=1,
                          amplitudes=[volume for _ in range(components)],
-                         decays=[10 for _ in range(components)],
+                         decays=[2 for _ in range(components)],
                          pluck=pluck,
                          components=components)
 
@@ -131,6 +133,17 @@ class AcousticBass(ElectricBass):
         self.harmonicity = 0.04
         self.decays = [10 for _ in range(components)]
 
+
+class Vibraphone(ElectricBass):
+    """Vibraphone."""
+
+    def __init__(self, nodes=[], pluck=False, volume=0.5, components=10):
+        super().__init__(nodes=nodes, 
+                         pluck=pluck, 
+                         volume=volume, 
+                         components=components)
+        self.harmonicity = 4
+        self.decays = [0.5 for _ in range(components)]
 
 
 class Wind(Voice):

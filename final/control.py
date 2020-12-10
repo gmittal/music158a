@@ -90,13 +90,15 @@ class Stage:
 
     def __init__(self, 
                  cmd_binding,
-                 stage_binding, 
+                 stage_binding,
+                 mix=0.5, 
                  size=0.5, 
-                 decay=0.5, 
-                 damping=0.9,                  
-                 diffusion=0.4):
+                 decay=0., 
+                 damping=0.,                  
+                 diffusion=0.):
         self.binding = cmd_binding
         self.room = stage_binding
+        self.mix = mix
         self.size = size
         self.decay = decay
         self.damping = damping
@@ -112,10 +114,7 @@ class Stage:
 
     def reverb_hook(self):
         """Function called every time step."""
-        send(f'{self.room}_size', self.size * 100)
-        send(f'{self.room}_decay', self.decay * 100)
-        send(f'{self.room}_damping', self.damping * 12)
-        send(f'{self.room}_diffusion', self.diffusion)
+        send(self.room, [self.mix * 100, self.size * 100, self.decay * 100, self.damping * 12000, self.diffusion])
 
     def _dict_to_point_cmd(self, member_dict):
         return [member_dict['name']] + \
@@ -180,7 +179,12 @@ def time_step():
     # Remove latest event from queue
     if len(state['clock_event_schedule']) > 0:
         event = state['clock_event_schedule'].pop(0)
-        event()
+        if type(event) == type(()): # concurrent events packed as a tuple
+            for subset in event:
+                subset()
+        else:
+            event()
+
 
 def frame_step():
     """Central (continuous) tick."""
@@ -192,7 +196,11 @@ def frame_step():
     # Remove latest event from queue
     if len(state['frame_event_schedule']) > 0:
         event = state['frame_event_schedule'].pop(0)
-        event()
+        if type(event) == type(()): # concurrent events packed as a tuple
+            for subset in event:
+                subset()
+        else:
+            event()
 
 
 def send(binding, value):
@@ -206,65 +214,115 @@ def world():
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
 
-    # # Scene 1
-    # radius = 0.3
-    # center_x, center_y = 0.5, 0.5
-    # for i in range(3):
-    #     x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
-    #     y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
-    #     stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
+    scenes = [False, True, True, True]
 
-    # wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3'], components=100)
-    # rain = instruments.Rain(nodes=['/p2m1', '/p2m2'])
-    # chirp = instruments.Chirps(nodes=['/p3m1', '/p3m2', '/p3m3'])
-    # wind.silence_nodes(send)
-    # rain.silence_nodes(send)
-    # chirp.silence_nodes(send)
+    # Scene 1
+    if scenes[0]:
+        # Set up stage
+        stage.mix = 1
+        stage.size = 1
+        stage.decay = 0.9
+        stage.damping = 0.6
+        stage.diffusion = 1
 
-    # rain.set_notes(send, [1, 1])
-    # time.sleep(3)
+        radius = 0.3
+        center_x, center_y = 0.5, 0.5
+        for i in range(3):
+            x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
+            y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
+            stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
 
-    # wind.amps = [0.002 for a in wind.amps]
-    # wind.set_notes(send, [400, 80, 110])
-    # time.sleep(3)
-    
-    # chirp.set_notes(send, [1, 1, 1])
-    # time.sleep(3)
+        wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3'], components=100)
+        rain = instruments.Rain(nodes=['/p2m1', '/p2m2'])
+        chirp = instruments.Chirps(nodes=['/p3m1', '/p3m2', '/p3m3'])
+        wind.silence_nodes(send)
+        rain.silence_nodes(send)
+        chirp.silence_nodes(send)
 
-    # # Cleanup
-    # wind.silence_nodes(send)
-    # rain.silence_nodes(send)
-    # chirp.silence_nodes(send)
-    # stage.clear()
+        rain.set_notes(send, [1, 1])
+
+        wind.amps = [0.002 for a in wind.amps]
+        wind.set_notes(send, [400, 80, 110])
+        
+        chirp.set_notes(send, [1, 1, 1])
+
+        # Sweep
+        for coord in utils.spiral(0.3, 0.3, 1, 200):
+            stage.move(*coord)
+        
+        for coord in utils.spiral(0.3, 0, 1, 10):
+            stage.move(*coord)
+
+        time.sleep(30)
+        # Cleanup
+        wind.amps = [0 for a in wind.amps]
+        wind.silence_nodes(send)
+        rain.silence_nodes(send)
+        chirp.silence_nodes(send)
+        stage.clear()
 
     # Scene 2
-    radius = 0.5
-    center_x, center_y = 0.5, 0.5
-    for i in range(4):
-        x = radius * math.cos(i * 2 * math.pi / 4.) + center_x
-        y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
-        stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
+    if scenes[1]:
+        # Set up stage
+        stage.mix = 0.1
+        stage.size = 0.2
+        stage.decay = 0.4
+        stage.damping = 0.2
+        stage.diffusion = 0
 
-    # Spiral sweep
-    for coord in utils.spiral(0, 0.3, 2, 100):
-        stage.move(*coord)
-    stage.move(0.5, 0.5)
+        radius = 0.3
+        center_x, center_y = 0.5, 0.5
+        for i in range(4):
+            x = radius * math.cos(i * 2 * math.pi / 4.) + center_x
+            y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
+            stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
 
-    rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'])
-    rain.set_notes(send, [1, 1, 1, 1])
-    time.sleep(1)
+        # Sweep
+        for coord in utils.spiral(0.3, 0.3, 2, 100):
+            stage.move(*coord)
+        
+        for coord in utils.spiral(0.3, 0, 1, 10):
+            stage.move(*coord)
 
-    bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.3, components=10)
+        rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'])
+        rain.set_notes(send, [1, 1, 1, 1])
 
-    midi = [29, -1, 30, -1, 31, -1, 32, -1, -1, 30, -1, -1, 32, -1, -1, -1]
-    midi += [34, -1, 35, -1, 36, -1, 37, -1, -1, 32, -1, -1, 35, -1, -1, -1]
-    midi += midi[:] + midi[:] + midi[:]
+        bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.5, components=10)
+        piano = instruments.Vibraphone(nodes=['/p3m1', '/p3m2', '/p3m3', '/p3m4'], pluck=True, volume=0.3, components=10)
 
-    notes = []
-    for i in midi:
-        notes.append([symbolic.mtof(i)])
-    bass.play_sequence(send, state['clock_event_schedule'], notes=notes)
-    bass.play_sequence(send, state['clock_event_schedule'], notes=[[0]])
+        bmidi = [19, -1, 20, -1, 21, -1, 22, -1, -1, 20, -1, -1, 22, -1, -1, -1]
+        bmidi += [24, -1, 25, -1, 26, -1, 27, -1, -1, 22, -1, -1, 25, -1, -1, -1]
+        bmidi = bmidi * 6
+
+        midi1 = [-1, -1, -1, -1, -1, -1, 92, -1, -1, 92, -1, -1, 92, -1, -1, -1]
+        midi2 = [-1, -1, -1, -1, -1, -1, 94, -1, -1, 94, -1, -1, 94, -1, -1, -1]
+        midi3 = [-1, -1, -1, -1, -1, -1, 97, -1, -1, 97, -1, -1, 97, -1, -1, -1]
+        midi4 = [-1, -1, -1, -1, -1, -1, 101, -1, -1, 101, -1, -1, 101, -1, -1, -1]
+        midi1 += [-1, -1, -1, -1, -1, -1, 91, -1, -1, 91, -1, -1, 91, -1, -1, -1]
+        midi2 += [-1, -1, -1, -1, -1, -1, 94, -1, -1, 94, -1, -1, 94, -1, -1, -1]
+        midi3 += [-1, -1, -1, -1, -1, -1, 97, -1, -1, 97, -1, -1, 97, -1, -1, -1]
+        midi4 += [-1, -1, -1, -1, -1, -1, 99, -1, -1, 99, -1, -1, 99, -1, -1, -1]
+
+        midi = list(zip(midi1, midi2, midi3, midi4))
+        midi = midi * 6
+
+        notes = []
+        for i in bmidi:
+            notes.append([symbolic.mtof(i)])
+        bass_events = bass.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
+
+        notes = []
+        for a, b, c, d in midi:
+            notes.append([symbolic.mtof(a) / 64, symbolic.mtof(b) / 32, symbolic.mtof(c) / 32, symbolic.mtof(d) / 32])
+        piano_events = piano.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
+    
+        state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
+
+        # Cleanup
+        state['clock_event_schedule'].append(lambda: bass.silence_nodes(send))
+        state['clock_event_schedule'].append(lambda: piano.silence_nodes(send))
+        state['clock_event_schedule'].append(lambda: rain.silence_nodes(send))
+        state['clock_event_schedule'].append(lambda: stage.clear())
 
     # Scene 3
     # the crazy one
