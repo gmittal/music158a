@@ -52,7 +52,7 @@ class Voice:
             assert decays is not None
             assert harmonicity is not None
             assert amplitudes is not None
-            self.timbre_fn = lambda fundamental: [1, 0, 1] + synthesis.filter_synth(fundamental, 
+            self.timbre_fn = lambda fundamental: [1, 1, 0] + synthesis.filter_synth(fundamental, 
                                                                         self.harmonicity, 
                                                                         self.amps,
                                                                         self.decays,

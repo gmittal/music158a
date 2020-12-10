@@ -194,18 +194,21 @@ def world():
         for y in [-1, 1]:
             stage.add_member('({}, {})'.format(x, y), 0.5 + x * 0.1, 0.5 + y * 0.1, 0.05, 0.2)
 
-    wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'], components=100)
-    wind.set_notes(send, [220, 40, 90, 364])
-    # time.sleep(5)
-    wind.silence_nodes(send)
+    wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'], components=500)
+    # wind.silence_nodes(send)
 
-    ocean = instruments.Wind(nodes=['/p2m1', '/p2m2', '/p2m3', '/p2m4'], components=100)
-    ocean.harmonicity = 2
-    # ocean.set_notes(send, [220, 40, 90, 364])
-    ocean.silence_nodes(send)
+
+    wind.amplitudes = [0 for _ in range(500)]
+    wind.set_notes(send, [0.1, 0.1, 0.1, 0.1])
+    # time.sleep(5)
+
 
     rain = instruments.Rain(nodes=['/p3m1'])
     rain.set_notes(send, [1])
+    rain.silence_nodes(send)
+
+    chirp = instruments.Chirps(nodes=['/p4m1'])
+    chirp.set_notes(send, [1])
 
 
 def main(argv):

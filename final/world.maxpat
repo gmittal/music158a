@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 373.0, 694.0, 1285.0, 722.0 ],
+		"rect" : [ 826.0, 501.0, 1285.0, 722.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -1695,6 +1695,13 @@
 			}
 , 			{
 				"name" : "rain.maxpat",
+				"bootpath" : "~/Desktop/workbench/music158a/final",
+				"patcherrelativepath" : ".",
+				"type" : "JSON",
+				"implicit" : 1
+			}
+, 			{
+				"name" : "chirp.maxpat",
 				"bootpath" : "~/Desktop/workbench/music158a/final",
 				"patcherrelativepath" : ".",
 				"type" : "JSON",
