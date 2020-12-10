@@ -270,8 +270,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 160.0, 78.760376000000008, 140.0, 34.0 ],
-					"text" : "/time : 40.9997"
+					"patching_rect" : [ 160.0, 78.760376000000008, 140.0, 34.0 ]
 				}
 
 			}

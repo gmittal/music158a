@@ -36,10 +36,12 @@ class Voice:
         self.timbre_fn = None
         self.nodes = nodes
 
+        assert len(self.nodes) <= 4, 'More than 4 nodes is not supported at this time.'
+
         if mode == 'sinusoid':
             assert harmonicity is not None
             assert amplitudes is not None
-            self.timbre_fn = lambda fundamental: synthesis.additive_synth(fundamental, 
+            self.timbre_fn = lambda fundamental: [0, 0] + synthesis.additive_synth(fundamental, 
                                                                           self.harmonicity, 
                                                                           self.amps, 
                                                                           oscillators=self.voices)
@@ -63,7 +65,6 @@ class Voice:
         """Play fundamentals in parallel (polyphonic)."""
         assert 1 <= len(fundamentals) <= len(self.nodes), 'Invalid number of notes.'
         
-        self.silence_nodes(send_fn)
         for i, fundamental in enumerate(fundamentals):
             node = self.nodes[i]
             params = self.timbre_fn(fundamental)
