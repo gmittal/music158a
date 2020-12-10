@@ -41,7 +41,7 @@ class Voice:
         if mode == 'sinusoid':
             assert harmonicity is not None
             assert amplitudes is not None
-            self.timbre_fn = lambda fundamental: [0, 0] + synthesis.additive_synth(fundamental, 
+            self.timbre_fn = lambda fundamental: [0, 0, 0] + synthesis.additive_synth(fundamental, 
                                                                           self.harmonicity, 
                                                                           self.amps, 
                                                                           oscillators=self.voices)
@@ -49,7 +49,7 @@ class Voice:
             assert decays is not None
             assert harmonicity is not None
             assert amplitudes is not None
-            self.timbre_fn = lambda fundamental: synthesis.filter_synth(fundamental, 
+            self.timbre_fn = lambda fundamental: [1, 0, 1] + synthesis.filter_synth(fundamental, 
                                                                         self.harmonicity, 
                                                                         self.amps,
                                                                         self.decays,
@@ -57,7 +57,7 @@ class Voice:
         elif mode == 'ddsp':
             assert components == 60 and ddsp_ckpt is not None
             self.ddsp_params = synthesis.get_ddsp_parameters(ddsp_ckpt)
-            self.timbre_fn = lambda fundamental: synthesis.ddsp_additive_synth(fundamental, self.ddsp_params)
+            self.timbre_fn = lambda fundamental: [0, 0, 0] + synthesis.ddsp_additive_synth(fundamental, self.ddsp_params)
         else:
             raise ValueError(f'Unsupported mode: {mode}')
 
@@ -107,7 +107,13 @@ class Wind(Voice):
                          components=components)
 
 
-class Rain:
-    """Linear combination of noise varibales."""
-    def __init__(self):
-        pass
+class Rain(Voice):
+    """Pre-built rain patch selector."""
+    def __init__(self, nodes=[], components=1):
+        super().__init__(nodes=nodes,
+                         mode='sinusoid',
+                         harmonicity=0.05,
+                         amplitudes=[1],
+                         components=1)
+        self.timbre_fn = lambda fundamental: [0, 0, 1]
+    
