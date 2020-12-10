@@ -23,12 +23,14 @@ class Voice:
                  harmonicity=None, 
                  amplitudes=None, 
                  decays=None,
+                 pluck=True,
                  components=60,
                  ddsp_ckpt=None):
         self.init_mode = mode
         self.harmonicity = harmonicity
         self.amps = amplitudes
         self.decays = decays
+        self.pluck = pluck
         self.voices = components
         self.ddsp_ckpt = ddsp_ckpt
 
@@ -38,7 +40,7 @@ class Voice:
         self.ddsp_params = None
         self.timbre_fn = None
         self.nodes = nodes
-        self.control_bits = [0, 0, 0]
+        self.control_bits = [0, int(not self.pluck), 0]
 
         assert len(self.nodes) <= 4, 'More than 4 nodes is not supported at this time.'
 
@@ -53,12 +55,12 @@ class Voice:
             assert decays is not None
             assert harmonicity is not None
             assert amplitudes is not None
-            self.control_bits = [1, 1, 0]
+            self.control_bits[0] = 1
             self.timbre_fn = lambda fundamental: self.control_bits + synthesis.filter_synth(fundamental, 
                                                                                             self.harmonicity, 
                                                                                             self.amps,
                                                                                             self.decays,
-                                                                                            oscillators=self.voices)
+                                                                                            resonators=self.voices)
         elif mode == 'ddsp':
             assert components == 60 and ddsp_ckpt is not None
             self.ddsp_params = synthesis.get_ddsp_parameters(ddsp_ckpt)
@@ -79,11 +81,15 @@ class Voice:
         """Silence all nodes attached to this instrument."""
         self.set_notes(send_fn, fundamentals=[0] * len(self.nodes))
 
-    def play_sequence(self, notes=[]):
-        pass
+    def play_sequence(self, send_fn, event_queue, notes=[[1]]):
+        """Plays sequence at the granularity of the clock."""
+        for note in notes:
+            def hook(n):
+                return lambda: self.set_notes(send_fn, n)
+            event_queue.append(hook(note))
 
 
-class Percussion:
+class Percussion(Voice):
     """Beat machine."""
     
     def __init__(self):
@@ -91,6 +97,37 @@ class Percussion:
 
     def play_notes(self):
         pass
+
+
+class ElectricBass(Voice):
+    """Electric bass."""
+
+    def __init__(self, nodes=[], pluck=True, volume=0.5, components=10):
+        super().__init__(nodes=nodes,
+                         mode='resonator',
+                         harmonicity=1,
+                         amplitudes=[volume for _ in range(components)],
+                         decays=[10 for _ in range(components)],
+                         pluck=pluck,
+                         components=components)
+
+    def set_volume(self, volume):
+        self.amps = [volume for _ in range(self.voices)]
+
+
+class AcousticBass(ElectricBass):
+    """Acoustic bass."""
+
+    def __init__(self, nodes=[], pluck=True, volume=0.5, components=10):
+        super().__init__(nodes=nodes,
+                         mode='resonator',
+                         harmonicity=0.0,
+                         amplitudes=[volume for _ in range(components)],
+                         decays=[10 for _ in range(components)],
+                         pluck=pluck,
+                         components=components)
+        self.harmonicity = 0.0
+
 
 
 class Wind(Voice):

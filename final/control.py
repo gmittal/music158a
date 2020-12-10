@@ -103,6 +103,9 @@ class Stage:
 
         self.members = []  # describes members in stage space
 
+        self.x = 0.5
+        self.y = 0.5
+
         # Add relevant hooks that will fire every time step.
         state['clock_hooks'].append(self.reverb_hook)
 
@@ -152,9 +155,15 @@ class Stage:
         hook = lambda: send(self.binding, self._dict_to_point_cmd(member))
         state['frame_event_schedule'].append(hook)
         
+    def move(self, x, y):
+        hook = lambda x_i, y_i: lambda: send(self.binding, ['move', x_i, y_i])
+        state['frame_event_schedule'].append(hook(x, y))
+
     def clear(self):
         self.members = []
         hook = lambda: send(self.binding, 'clear')
+        state['frame_event_schedule'].append(hook)
+        hook = lambda: send(self.binding, ['move', 0.5, 0.5])
         state['frame_event_schedule'].append(hook)
 
 
@@ -167,6 +176,10 @@ def time_step():
     for hook in state['clock_hooks']:
         hook()
 
+    # Remove latest event from queue
+    if len(state['clock_event_schedule']) > 0:
+        event = state['clock_event_schedule'].pop(0)
+        event()
 
 def frame_step():
     """Central (continuous) tick."""
@@ -192,27 +205,64 @@ def world():
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
 
-    radius = 0.3
+    # # Scene 1
+    # radius = 0.3
+    # center_x, center_y = 0.5, 0.5
+    # for i in range(3):
+    #     x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
+    #     y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
+    #     stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
+
+    # wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3'], components=100)
+    # rain = instruments.Rain(nodes=['/p2m1', '/p2m2'])
+    # chirp = instruments.Chirps(nodes=['/p3m1', '/p3m2', '/p3m3'])
+    # wind.silence_nodes(send)
+    # rain.silence_nodes(send)
+    # chirp.silence_nodes(send)
+
+    # rain.set_notes(send, [1, 1])
+    # time.sleep(3)
+
+    # wind.amps = [0.002 for a in wind.amps]
+    # wind.set_notes(send, [400, 80, 110])
+    # time.sleep(3)
+    
+    # chirp.set_notes(send, [1, 1, 1])
+    # time.sleep(3)
+
+    # # Cleanup
+    # wind.silence_nodes(send)
+    # rain.silence_nodes(send)
+    # chirp.silence_nodes(send)
+    # stage.clear()
+
+    # Scene 2
+    radius = 0.5
     center_x, center_y = 0.5, 0.5
-    for i in range(3):
-        x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
-        y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
-        stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
+    for i in range(4):
+        x = radius * math.cos(i * 2 * math.pi / 4.) + center_x
+        y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
+        stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
 
-    wind = instruments.Wind(nodes=['/p1m1', '/p1m2'], components=100)
-    wind.amps = [0.002 for _ in range(100)]
-    wind.set_notes(send, [400, 80])
+    for x in range(0, 100, 1):
+        for y in range(0, 100, 1):
+            
+            stage.move(x / 100., y / 100.)
 
-    rain = instruments.Rain(nodes=['/p2m1', '/p2m2'])
-    rain.set_notes(send, [1, 1])
+    rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'])
+    rain.set_notes(send, [1, 1, 1, 1])
+    time.sleep(1)
 
-    chirp = instruments.Chirps(nodes=['/p3m1', '/p3m2', '/p3m3'])
-    chirp.set_notes(send, [1, 1, 1])
+    bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=1, components=10)
+    bass.play_sequence(send, state['clock_event_schedule'], notes=[[40], [50], [60], [70]])
+    bass.play_sequence(send, state['clock_event_schedule'], notes=[[0]])
 
-    time.sleep(5)
-    wind.silence_nodes(send)
-    rain.silence_nodes(send)
-    chirp.silence_nodes(send)
+    # Scene 3
+    # the crazy one
+
+    # Scene 4?
+
+    # Scene 1 and repeat
 
 
 def main(argv):
