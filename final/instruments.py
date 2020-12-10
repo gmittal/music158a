@@ -115,14 +115,14 @@ class Rain(Voice):
                          amplitudes=[1],
                          components=1)
         self.control_bits = [0, 0, 1]
-
-    def set_notes(self, send_fn, fundamentals=[]):
-        self.control_bits = [0, 0, 1]
-        super().set_notes(send_fn, fundamentals)
     
     def silence_nodes(self, send_fn):
+        old_bits = self.control_bits
         self.control_bits = [0, 0, 0]
-        super().silence_nodes(send_fn)
+        for i, node in enumerate(self.nodes):
+            params = self.timbre_fn(0)
+            send_fn(node, params)
+        self.control_bits = old_bits
 
 
 class Chirps(Voice):
@@ -134,12 +134,12 @@ class Chirps(Voice):
                          amplitudes=[1],
                          components=1)
         self.control_bits = [0, 0, 2]
-
-    def set_notes(self, send_fn, fundamentals=[]):
-        self.control_bits = [0, 0, 2]
-        super().set_notes(send_fn, fundamentals)
     
     def silence_nodes(self, send_fn):
+        old_bits = self.control_bits
         self.control_bits = [0, 0, 0]
-        super().silence_nodes(send_fn)
+        for i, node in enumerate(self.nodes):
+            params = self.timbre_fn(0)
+            send_fn(node, params)
+        self.control_bits = old_bits
     

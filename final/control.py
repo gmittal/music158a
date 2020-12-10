@@ -200,20 +200,18 @@ def world():
         stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
 
     wind = instruments.Wind(nodes=['/p1m1', '/p1m2'], components=100)
-    wind.amps = [0.005 for _ in range(100)]
-    wind.set_notes(send, [500, 80])
-    # time.sleep(5)
-    # wind.silence_nodes(send)
+    wind.amps = [0.002 for _ in range(100)]
+    wind.set_notes(send, [400, 80])
 
-    # TODO: find method to stop custom patches
-    rain = instruments.Rain(nodes=['/p2m1'])
-    rain.set_notes(send, [1])
+    rain = instruments.Rain(nodes=['/p2m1', '/p2m2'])
+    rain.set_notes(send, [1, 1])
+
+    chirp = instruments.Chirps(nodes=['/p3m1', '/p3m2', '/p3m3'])
+    chirp.set_notes(send, [1, 1, 1])
+
     time.sleep(5)
+    wind.silence_nodes(send)
     rain.silence_nodes(send)
-
-    chirp = instruments.Chirps(nodes=['/p4m1'])
-    chirp.set_notes(send, [1])
-    time.sleep(5)
     chirp.silence_nodes(send)
 
 
