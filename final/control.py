@@ -26,6 +26,7 @@ flags.DEFINE_integer('client_port', 7000, 'OSC client port.')
 flags.DEFINE_string('server_ip', '127.0.0.1', 'OSC server IP address.')
 flags.DEFINE_integer('server_port', 8000, 'OSC server port.')
 flags.DEFINE_boolean('verbose', False, 'Log all OSC commands.')
+flags.DEFINE_boolean('loop', True, 'Loop the world.')
 
 # Stage(s) use the following information 
 # to keep in touch with Max/MSP.
@@ -158,6 +159,8 @@ class Stage:
         self.x = 0.5
         self.y = 0.5
 
+        self.listen = True
+
         # Add relevant hooks that will fire every time step.
         state['clock_hooks'].append(self.reverb_hook)
         state['clock_hooks'].append(self.listening_hook)
@@ -168,7 +171,8 @@ class Stage:
 
     def listening_hook(self):
         """Update the user cursor so that stage changes propagate."""
-        self.move(self.x, self.y)
+        if self.listen:
+            self.move(self.x, self.y)
 
     def _dict_to_point_cmd(self, member_dict):
         return [member_dict['name']] + \
@@ -268,142 +272,182 @@ def send(binding, value):
     client.send_message(binding, value)
 
 
-def world():
+def nature_scene():
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
-
-    scenes = [False, True, True, True]
-
-    # Scene 1
-    if scenes[0]:
-        # Set up stage
-        stage.mix = 1
-        stage.size = 1
-        stage.decay = 0.9
-        stage.damping = 0.6
-        stage.diffusion = 1
-
-        radius = 0.3
-        center_x, center_y = 0.5, 0.5
-        for i in range(3):
-            x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
-            y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
-            stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
-
-        wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3'], components=100)
-        rain = instruments.Rain(nodes=['/p2m1', '/p2m2'])
-        chirp = instruments.Chirps(nodes=['/p3m1', '/p3m2', '/p3m3'])
-        wind.silence_nodes(send)
-        rain.silence_nodes(send)
-        chirp.silence_nodes(send)
-
-        rain.set_notes(send, [1, 1])
-
-        wind.amps = [0.002 for a in wind.amps]
-        wind.set_notes(send, [400, 80, 110])
-        
-        chirp.set_notes(send, [1, 1, 1])
-
-        # Sweep
-        for coord in utils.spiral(0.3, 0.3, 1, 200):
-            stage.move(*coord)
-        
-        for coord in utils.spiral(0.3, 0, 1, 10):
-            stage.move(*coord)
-
-        # Rotate
-        # for theta in range(0, 100):
-        #     for i in range(3):
-        #         phase = theta / 1000.
-        #         radius -= 0.0001
-        #         x = radius * math.cos(i * 2 * math.pi / 3. + phase) + center_x
-        #         y = radius * math.sin(i * 2 * math.pi / 3. + phase) + center_y
-        #         stage.modify_member('{}'.format(i), x, y, 0.2, 0.4)
-        #         time.sleep(0.01)
-
-        time.sleep(30)
-        # Cleanup
-        wind.amps = [0 for a in wind.amps]
-        wind.silence_nodes(send)
-        rain.silence_nodes(send)
-        chirp.silence_nodes(send)
-        stage.clear()
-
-    # Scene 2
-    if scenes[1]:
-        # Set up stage
-        stage.mix = 0.1
-        stage.size = 0.2
-        stage.decay = 0.4
-        stage.damping = 0.2
-        stage.diffusion = 0
-
-        radius = 0.3
-        center_x, center_y = 0.5, 0.5
-        for i in range(4):
-            x = radius * math.cos(i * 2 * math.pi / 4.) + center_x
-            y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
-            stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
-
-        # Sweep
-        for coord in utils.spiral(0.3, 0.3, 2, 1000):
-            stage.move(*coord)
-        
-        for coord in utils.spiral(0.3, 0, 1, 1000):
-            stage.move(*coord)
-
-        rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'])
-        rain.set_notes(send, [1, 1, 1, 1])
-        bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.6, components=7)
-        piano = instruments.Vibraphone(nodes=['/p3m1', '/p3m2', '/p3m3', '/p3m4'], pluck=True, volume=0.3, components=10)
-        user = instruments.Organ(node='/p4m1', volume=2)
-
-        # Attach MIDI controller
-        midi = MIDIController(instrument=user)
-
-        # Set up step sequencers
-        bmidi = [19, -1, 20, -1, 21, -1, 22, -1, -1, 32, -1, -1, 34, -1, -1, -1]
-        bmidi += [24, -1, 25, -1, 26, -1, 27, -1, -1, 34, -1, -1, 37, -1, -1, -1]
-        bmidi = bmidi * 6
-
-        midi1 = [-1, -1, -1, -1, -1, -1, 92, -1, -1, 92, -1, -1, 92, -1, -1, -1]
-        midi2 = [-1, -1, -1, -1, -1, -1, 94, -1, -1, 94, -1, -1, 94, -1, -1, -1]
-        midi3 = [-1, -1, -1, -1, -1, -1, 97, -1, -1, 97, -1, -1, 97, -1, -1, -1]
-        midi4 = [-1, -1, -1, -1, -1, -1, 101, -1, -1, 101, -1, -1, 101, -1, -1, -1]
-        midi1 += [-1, -1, -1, -1, -1, -1, 91, -1, -1, 91, -1, -1, 91, -1, -1, -1]
-        midi2 += [-1, -1, -1, -1, -1, -1, 94, -1, -1, 94, -1, -1, 94, -1, -1, -1]
-        midi3 += [-1, -1, -1, -1, -1, -1, 97, -1, -1, 97, -1, -1, 97, -1, -1, -1]
-        midi4 += [-1, -1, -1, -1, -1, -1, 99, -1, -1, 99, -1, -1, 99, -1, -1, -1]
-
-        midi = list(zip(midi1, midi2, midi3, midi4))
-        midi = midi * 6
-
-        notes = []
-        for i in bmidi:
-            notes.append([symbolic.mtof(i) * 2])
-        bass_events = bass.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
-
-        notes = []
-        for a, b, c, d in midi:
-            notes.append([symbolic.mtof(a) / 8, symbolic.mtof(b) / 8, symbolic.mtof(c) / 8, symbolic.mtof(d) / 8])
-        piano_events = piano.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
     
-        # Push sequencer changes
-        state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
+    # Set up stage
+    stage.mix = 1
+    stage.size = 1
+    stage.decay = 0.9
+    stage.damping = 0.6
+    stage.diffusion = 1
 
-        # Cleanup
-        state['clock_event_schedule'].append(lambda: bass.silence_nodes(send))
-        state['clock_event_schedule'].append(lambda: piano.silence_nodes(send))
-        state['clock_event_schedule'].append(lambda: rain.silence_nodes(send))
-        state['clock_event_schedule'].append(lambda: user.silence_nodes(send))
-        state['clock_event_schedule'].append(lambda: stage.clear())
+    radius = 0.3
+    center_x, center_y = 0.5, 0.5
+    for i in range(3):
+        x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
+        y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
+        stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
 
-    # Scene 3
-    # the crazy one
+    wind = instruments.Wind(nodes=['/p1m1', '/p1m2', '/p1m3'], components=100)
+    rain = instruments.Rain(nodes=['/p2m1', '/p2m2'])
+    chirp = instruments.Chirps(nodes=['/p3m1', '/p3m2', '/p3m3'])
+    wind.silence_nodes(send)
+    rain.silence_nodes(send)
+    chirp.silence_nodes(send)
 
-    # Scene 4?
+    rain.set_notes(send, [1, 1])
 
-    # Scene 1 and repeat
+    wind.amps = [0.002 for a in wind.amps]
+    wind.set_notes(send, [400, 80, 110])
+    
+    chirp.set_notes(send, [1, 1, 1])
+
+    # Sweep
+    for coord in utils.spiral(0.3, 0.3, 1, 2000):
+        stage.move(*coord)
+    
+    for coord in utils.spiral(0.3, 0, 1, 100):
+        stage.move(*coord)
+
+    stage.listen = False
+
+    time.sleep(10)    
+    # Rotate
+    inner_radius = 0.2
+    for theta in range(0, 2000):
+        for i in range(3):
+            stage.size -= 0.0001
+            phase = theta / 1000.
+            radius -= 0.0001
+            inner_radius -= 0.00001
+            x = radius * math.cos(i * 2 * math.pi / 3. + phase) + center_x
+            y = radius * math.sin(i * 2 * math.pi / 3. + phase) + center_y
+            stage.modify_member('{}'.format(i), x, y, inner_radius, 0.4)
+            time.sleep(0.005)
+
+    time.sleep(30)
+    # Cleanup
+    wind.amps = [0 for a in wind.amps]
+    wind.silence_nodes(send)
+    rain.silence_nodes(send)
+    chirp.silence_nodes(send)
+    stage.clear()
+
+
+def chameleon_scene():
+    stage = Stage('/stage_cmd', '/stage_reverb')
+    stage.clear()
+    
+    # Set up stage
+    stage.mix = 0.1
+    stage.size = 0.2
+    stage.decay = 0.4
+    stage.damping = 0.2
+    stage.diffusion = 0
+
+    radius = 0.3
+    center_x, center_y = 0.5, 0.5
+    for i in range(4):
+        x = radius * math.cos(i * 2 * math.pi / 4.) + center_x
+        y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
+        stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
+
+    # Sweep
+    for coord in utils.spiral(0.3, 0.3, 2, 1000):
+        stage.move(*coord)
+    
+    for coord in utils.spiral(0.3, 0, 1, 1000):
+        stage.move(*coord)
+
+    stage.listen = False
+
+    rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'])
+    rain.set_notes(send, [1, 1, 1, 1])
+    bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.2, components=7)
+    piano = instruments.Vibraphone(nodes=['/p3m1', '/p3m2', '/p3m3', '/p3m4'], pluck=True, volume=0.1, components=10)
+    user = instruments.Organ(node='/p4m1', volume=2)
+
+    # Attach MIDI controller
+    midi = MIDIController(instrument=user)
+
+    # Set up step sequencers
+    bmidi = [19, -1, 20, -1, 21, -1, 22, -1, -1, 32, -1, -1, 34, -1, -1, -1]
+    bmidi += [24, -1, 25, -1, 26, -1, 27, -1, -1, 34, -1, -1, 37, -1, -1, -1]
+    bmidi = bmidi * 10
+
+    midi1 = [-1, -1, -1, -1, -1, -1, 92, -1, -1, 92, -1, -1, 92, -1, -1, -1]
+    midi2 = [-1, -1, -1, -1, -1, -1, 94, -1, -1, 94, -1, -1, 94, -1, -1, -1]
+    midi3 = [-1, -1, -1, -1, -1, -1, 97, -1, -1, 97, -1, -1, 97, -1, -1, -1]
+    midi4 = [-1, -1, -1, -1, -1, -1, 101, -1, -1, 101, -1, -1, 101, -1, -1, -1]
+    midi1 += [-1, -1, -1, -1, -1, -1, 91, -1, -1, 91, -1, -1, 91, -1, -1, -1]
+    midi2 += [-1, -1, -1, -1, -1, -1, 94, -1, -1, 94, -1, -1, 94, -1, -1, -1]
+    midi3 += [-1, -1, -1, -1, -1, -1, 97, -1, -1, 97, -1, -1, 97, -1, -1, -1]
+    midi4 += [-1, -1, -1, -1, -1, -1, 99, -1, -1, 99, -1, -1, 99, -1, -1, -1]
+
+    midi = list(zip(midi1, midi2, midi3, midi4))
+    midi = midi * 10
+
+    notes = []
+    for i in bmidi:
+        notes.append([symbolic.mtof(i) * 2])
+    bass_events = bass.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
+
+    notes = []
+    for a, b, c, d in midi:
+        notes.append([symbolic.mtof(a) / 8, symbolic.mtof(b) / 8, symbolic.mtof(c) / 8, symbolic.mtof(d) / 8])
+    piano_events = piano.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
+
+    # Push sequencer changes
+    state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
+
+    # Change stage parameters
+    def shift():
+        stage.damping += (0.5 - stage.damping) / 2000
+        stage.mix += (0.75 - stage.mix) / 1000
+        stage.diffusion += (0.8 - stage.diffusion) / 2000
+    for i in range(5000):
+        state['frame_event_schedule'].append(shift)
+
+    # Cleanup
+    state['clock_event_schedule'].append(lambda: bass.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: piano.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: rain.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: user.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: stage.clear())
+
+
+def machine_scene():
+    stage = Stage('/stage_cmd', '/stage_reverb')
+    stage.clear()
+    
+    # Set up stage
+    stage.mix = 0
+    stage.size = 0
+    stage.decay = 0
+    stage.damping = 0
+    stage.diffusion = 0
+
+
+def world(loop=True):
+    scenes = [False, False, True]
+
+    i = 0
+    while (i < 1 or FLAGS.loop):
+        # Scene 1
+        if scenes[0]:
+            nature_scene()
+
+        # Scene 2
+        if scenes[1]:
+            chameleon_scene()
+
+        # Scene 3
+        if scenes[2]:
+            machine_scene()
+
+        i += 1
 
 
 def main(argv):
