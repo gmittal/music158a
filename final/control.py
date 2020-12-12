@@ -90,10 +90,11 @@ def _signal_handler(binding, *args):
 class MIDIController:
     """User-controlled monophonic synth wrapper."""
 
-    def __init__(self, input_binding='/midi', instrument=None):
+    def __init__(self, input_binding='/midi', instrument=None, semitones=12):
         self.binding = input_binding
         self.synth = instrument
         self.connected = False
+        self.semitones = semitones
 
         self.note_on = False
         self.note = -1
@@ -128,7 +129,7 @@ class MIDIController:
             self.fire_note()
 
     def fire_note(self):
-        fundamental = symbolic.mtof(self.note) / 2
+        fundamental = symbolic.mtof(self.note, self.semitones) / 2
         if self.note_on:
             state['midi_event_queue'].append(lambda: self.synth.set_notes(send, fundamentals=[fundamental]))
         else:
@@ -391,12 +392,12 @@ def chameleon_scene():
 
     notes = []
     for i in bmidi:
-        notes.append([symbolic.mtof(i) * 2])
+        notes.append([symbolic.mtof(i, 12) * 2])
     bass_events = bass.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
 
     notes = []
     for a, b, c, d in midi:
-        notes.append([symbolic.mtof(a) / 8, symbolic.mtof(b) / 8, symbolic.mtof(c) / 8, symbolic.mtof(d) / 8])
+        notes.append([symbolic.mtof(a, 12) / 8, symbolic.mtof(b, 12) / 8, symbolic.mtof(c, 12) / 8, symbolic.mtof(d, 12) / 8])
     piano_events = piano.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
 
     # Push sequencer changes
@@ -428,6 +429,51 @@ def machine_scene():
     stage.decay = 0
     stage.damping = 0
     stage.diffusion = 0
+
+    radius = 0.3
+    center_x, center_y = 0.5, 0.5
+    for i in range(4):
+        x = radius * math.cos(i * 2 * math.pi / 4.) + center_x
+        y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
+        stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
+
+    bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.2, components=7)
+    piano = instruments.Vibraphone(nodes=['/p3m1', '/p3m2', '/p3m3', '/p3m4'], pluck=True, volume=0.05, components=10)
+    user = instruments.Organ(node='/p4m1', volume=2)
+    user = instruments.Flute(node='/p4m1', volume=2)
+
+    # Attach MIDI controller
+    midi = MIDIController(instrument=user, semitones=19)
+
+    # Set up step sequencers
+    bmidi = [19, -1, 20, -1, 21, -1, 22, -1, -1, 32, -1, -1, 34, -1, -1, -1]
+    bmidi += [24, -1, 25, -1, 26, -1, 27, -1, -1, 34, -1, -1, 37, -1, -1, -1]
+    bmidi = bmidi * 10
+
+    midi1 = [-1, 19, -1, -1, 21, -1, -1, 22, -1, -1, 32, -1, -1, 34, -1, -1]
+    midi2 = [-1, 38, -1, -1, 40, -1, -1, 41, -1, -1, 51, -1, -1, 53, -1, -1]
+    midi3 = [-1, 57, -1, -1, 59, -1, -1, 60, -1, -1, 70, -1, -1, 72, -1, -1]
+    midi4 = [-1, 76, -1, -1, 78, -1, -1, 79, -1, -1, 89, -1, -1, 91, -1, -1]
+    midi1 += [24, -1, -1, 25, -1, -1, 27, -1, -1, 34, -1, -1, 37, -1, -1, -1]
+    midi2 += [43, -1, -1, 44, -1, -1, 46, -1, -1, 53, -1, -1, 56, -1, -1, -1]
+    midi3 += [62, -1, -1, 63, -1, -1, 65, -1, -1, 72, -1, -1, 75, -1, -1, -1]
+    midi4 += [81, -1, -1, 82, -1, -1, 84, -1, -1, 91, -1, -1, 94, -1, -1, -1]
+
+    midi = list(zip(midi1, midi2, midi3, midi4))
+    midi = midi * 10
+
+    notes = []
+    for i in bmidi:
+        notes.append([symbolic.mtof(i, 19)])
+    bass_events = bass.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
+
+    notes = []
+    for a, b, c, d in midi:
+        notes.append([symbolic.mtof(a, 19) * 2, symbolic.mtof(b, 19) * 2, symbolic.mtof(c, 19) * 2, symbolic.mtof(d, 12) * 2])
+    piano_events = piano.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
+
+    # Push sequencer changes
+    state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
 
 
 def world(loop=True):

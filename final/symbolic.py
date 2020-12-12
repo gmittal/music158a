@@ -6,8 +6,6 @@ import numpy as np
 import utils
 
 
-def read_midi():
-    """read bitmidi"""
 
 def markov_chain():
     """learn bitmidi"""
@@ -15,17 +13,14 @@ def markov_chain():
 def scale():
     """weird scales"""
 
-def chords():
-    """etc."""
 
-
-def mtof(midi):
+def mtof(midi, semitones=12):
     if midi == -1:
         return 0
-    return 2 ** ((midi - 69) / 12) * 440.
+    return 2 ** ((midi - 69) / semitones) * 440.
 
 
-def ftom(freq):
+def ftom(freq, semitones):
     if freq == 0:
         return -1
-    return 69 + 12 * (np.log(freq / 440.)) / np.log(2)
+    return 69 + semitones * (np.log(freq / 440.)) / np.log(2)
