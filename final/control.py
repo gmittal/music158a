@@ -90,7 +90,7 @@ def _signal_handler(binding, *args):
 class MIDIController:
     """User-controlled monophonic synth wrapper."""
 
-    def __init__(self, input_binding='/midi', instrument=None, semitones=12):
+    def __init__(self, input_binding='/midi', instrument=None, semitones=12, events=None):
         self.binding = input_binding
         self.synth = instrument
         self.connected = False
@@ -99,6 +99,8 @@ class MIDIController:
         self.note_on = False
         self.note = -1
 
+        self.events = events
+        self._just_pushed = False
         self.table = {}
 
         state['frame_hooks'].append(lambda: self.update_state())
@@ -132,7 +134,11 @@ class MIDIController:
         fundamental = symbolic.mtof(self.note, self.semitones) / 2
         if self.note_on:
             state['midi_event_queue'].append(lambda: self.synth.set_notes(send, fundamentals=[fundamental]))
+            if self.events is not None and not self._just_pushed:
+                self._just_pushed = True
+                self.events.append(fundamental)
         else:
+            self._just_pushed = False
             state['midi_event_queue'].append(lambda: self.synth.silence_nodes(send))
 
 
@@ -437,13 +443,52 @@ def machine_scene():
         y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
         stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
 
-    bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.2, components=7)
-    piano = instruments.Vibraphone(nodes=['/p3m1', '/p3m2', '/p3m3', '/p3m4'], pluck=True, volume=0.05, components=10)
-    user = instruments.Organ(node='/p4m1', volume=2)
-    user = instruments.Flute(node='/p4m1', volume=2)
+    stage.listen = False
+
+    # P1
+    rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3'])  # immutable
+    bass = instruments.ElectricBass(nodes=['/p1m4'], pluck=True, volume=0.2, components=7)  # mutable
+    rain.set_notes(send, [1, 1, 1])
+
+    # P2 (mutable)
+    piano = instruments.Vibraphone(nodes=['/p2m1', '/p2m2', '/p2m3', '/p2m4'], pluck=True, volume=0.05, components=10)
+    
+    # P3
+    receiver1 = instruments.TenorSaxophone(node='/p3m1', volume=0.2)  # immutable
+    receiver2 = instruments.TenorSaxophone(node='/p3m2', volume=0.4)  # immutable
+    wind = instruments.Wind(nodes=['/p3m3', '/p3m4'], components=100)  # mutable
+    wind.set_notes(send, [220, 90])
+
+    # P4 (immutable)
+    user = instruments.Organ(node='/p4m1', volume=1)
+    chirp = instruments.Chirps(nodes=['/p4m2', '/p4m3', '/p4m4'])
+    chirp.set_notes(send, [1, 1, 1])
 
     # Attach MIDI controller
-    midi = MIDIController(instrument=user, semitones=19)
+    midi_f0 = []
+    midi = MIDIController(instrument=user, semitones=19, events=midi_f0)
+
+    # Add echo hook
+    def catch_midi():
+        while len(midi_f0) > 0:            
+            f0 = midi_f0.pop(0)
+            hook = lambda f0: lambda: receiver1.set_notes(send, fundamentals=[f0])
+            state['frame_event_schedule'].append(hook(f0))
+            for i in range(10):
+                state['frame_event_schedule'].append(lambda: 1)
+                state['frame_event_schedule'].append(lambda: 1)
+                state['frame_event_schedule'].append(lambda: 1)
+            hook = lambda: receiver1.silence_nodes(send)
+            state['frame_event_schedule'].append(hook)
+            hook = lambda f0: lambda: receiver2.set_notes(send, fundamentals=[f0 * 2])
+            state['frame_event_schedule'].append(hook(f0))
+            for i in range(10):
+                state['frame_event_schedule'].append(lambda: 1)
+                state['frame_event_schedule'].append(lambda: 1)
+                state['frame_event_schedule'].append(lambda: 1)
+            hook = lambda: receiver2.silence_nodes(send)
+            state['frame_event_schedule'].append(hook)
+    state['frame_hooks'].append(catch_midi)
 
     # Set up step sequencers
     bmidi = [19, -1, 20, -1, 21, -1, 22, -1, -1, 32, -1, -1, 34, -1, -1, -1]
@@ -460,7 +505,7 @@ def machine_scene():
     midi4 += [81, -1, -1, 82, -1, -1, 84, -1, -1, 91, -1, -1, 94, -1, -1, -1]
 
     midi = list(zip(midi1, midi2, midi3, midi4))
-    midi = midi * 10
+    midi = midi * 4
 
     notes = []
     for i in bmidi:
@@ -475,12 +520,27 @@ def machine_scene():
     # Push sequencer changes
     state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
 
+    # Sonic acrobatics
+    # Modify room reverb, timbre, RBFI, room focus
+    # Can modify bass, wind, piano
+    stage.listen = True
+
+    # Cleanup
+    state['clock_event_schedule'].append(lambda: state['frame_hooks'].pop())
+    state['clock_event_schedule'].append(lambda: bass.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: piano.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: rain.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: user.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: chirp.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: wind.silence_nodes(send))
+    state['clock_event_schedule'].append(lambda: stage.clear())
+
 
 def world(loop=True):
-    scenes = [False, False, True]
+    scenes = [False, True, False]
 
     i = 0
-    while (i < 1 or FLAGS.loop):
+    while i < 1 or FLAGS.loop:
         # Scene 1
         if scenes[0]:
             nature_scene()

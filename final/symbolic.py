@@ -6,14 +6,6 @@ import numpy as np
 import utils
 
 
-
-def markov_chain():
-    """learn bitmidi"""
-
-def scale():
-    """weird scales"""
-
-
 def mtof(midi, semitones=12):
     if midi == -1:
         return 0

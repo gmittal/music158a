@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 34.0, 169.0, 1242.0, 751.0 ],
+		"rect" : [ 34.0, 156.0, 1242.0, 751.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -1233,28 +1233,6 @@
 			}
 , 			{
 				"box" : 				{
-					"bgmode" : 0,
-					"border" : 0,
-					"clickthrough" : 0,
-					"enablehscroll" : 0,
-					"enablevscroll" : 0,
-					"extract" : 1,
-					"id" : "obj-4",
-					"lockeddragscroll" : 0,
-					"maxclass" : "bpatcher",
-					"name" : "bp.Freeverb.maxpat",
-					"numinlets" : 2,
-					"numoutlets" : 2,
-					"offset" : [ 0.0, 0.0 ],
-					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 17.933319999999981, 596.0, 185.029999000000004, 122.0 ],
-					"varname" : "bp.Freeverb",
-					"viewvisibility" : 1
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-18",
 					"maxclass" : "newobj",
 					"numinlets" : 3,
@@ -1326,7 +1304,7 @@
 , 			{
 				"box" : 				{
 					"always_draw_circles" : 4294967297,
-					"always_draw_labels" : 1,
+					"always_draw_labels" : 17179869185,
 					"color" : [ 1.0, 1.0, 1.0, 1.0 ],
 					"fontface" : 0,
 					"fontname" : "Arial",
@@ -1338,7 +1316,7 @@
 					"outlettype" : [ "", "", "", "", "" ],
 					"parameter_enable" : 0,
 					"patching_rect" : [ 559.0, 179.0, 293.0, 293.0 ],
-					"spaces" : [ "space", 0 ]
+					"spaces" : [ "space", 4, 0.800000011920929, 0.5, "0", 0.75, 0.375, 0.1875, 0.0, 3.32192809488736, 746154.531795113580301, 0.100000001490116, 0.400000005960464, 0, 0.5, 0.800000011920929, "1", 0.75, 0.5625, 0.1875, 0.0, 3.32192809488736, 746154.531795113580301, 0.100000001490116, 0.400000005960464, 0, 0.200000002980232, 0.5, "2", 0.75, 0.75, 0.1875, 0.0, 3.32192809488736, 746154.531795113580301, 0.100000001490116, 0.400000005960464, 0, 0.5, 0.200000002980232, "3", 0.5625, 0.75, 0.1875, 0.0, 3.32192809488736, 746154.531795113580301, 0.100000001490116, 0.400000005960464, 0 ]
 				}
 
 			}
@@ -1811,11 +1789,6 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-4::obj-101" : [ "Dry", "Dry", 0 ],
-			"obj-4::obj-26" : [ "bypass[3]", "bypass", 0 ],
-			"obj-4::obj-31" : [ "Feedback1", "FB1", 0 ],
-			"obj-4::obj-32" : [ "Feedback2", "FB2", 0 ],
-			"obj-4::obj-33" : [ "Damp[1]", "Damp", 0 ],
 			"obj-5::obj-1" : [ "Size", "Size", 0 ],
 			"obj-5::obj-20" : [ "Diffusion", "Diffusion", 0 ],
 			"obj-5::obj-25" : [ "Damping", "Damping", 0 ],
@@ -1830,33 +1803,6 @@
 		}
 ,
 		"dependency_cache" : [ 			{
-				"name" : "bp.Freeverb.maxpat",
-				"bootpath" : "C74:/packages/BEAP/clippings/BEAP/Effects",
-				"type" : "JSON",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "freeverb.gendsp",
-				"bootpath" : "~/Library/Application Support/Cycling '74/Max 8/Examples/gen",
-				"patcherrelativepath" : "../../../../Library/Application Support/Cycling '74/Max 8/Examples/gen",
-				"type" : "gDSP",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "freeverb_allpass.gendsp",
-				"bootpath" : "~/Library/Application Support/Cycling '74/Max 8/Examples/gen",
-				"patcherrelativepath" : "../../../../Library/Application Support/Cycling '74/Max 8/Examples/gen",
-				"type" : "gDSP",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "freeverb_comb.gendsp",
-				"bootpath" : "~/Library/Application Support/Cycling '74/Max 8/Examples/gen",
-				"patcherrelativepath" : "../../../../Library/Application Support/Cycling '74/Max 8/Examples/gen",
-				"type" : "gDSP",
-				"implicit" : 1
-			}
-, 			{
 				"name" : "bp.Reverb 2.maxpat",
 				"bootpath" : "C74:/packages/BEAP/clippings/BEAP/Effects",
 				"type" : "JSON",
