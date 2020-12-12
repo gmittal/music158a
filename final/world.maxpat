@@ -40,64 +40,12 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
-					"fontface" : 0,
-					"fontname" : "Arial",
-					"fontsize" : 12.0,
-					"id" : "obj-87",
-					"maxclass" : "number~",
-					"mode" : 2,
-					"numinlets" : 2,
-					"numoutlets" : 2,
-					"outlettype" : [ "signal", "float" ],
-					"patching_rect" : [ 625.0, 796.0, 56.0, 22.0 ],
-					"sig" : 0.0
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-86",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 687.0, 716.0, 86.0, 22.0 ],
-					"text" : "record 450000"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-84",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 625.0, 722.0, 35.0, 22.0 ],
-					"text" : "open"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-81",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 625.0, 761.0, 69.0, 22.0 ],
-					"text" : "sfrecord~ 2"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-80",
-					"linecount" : 18,
+					"linecount" : 17,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 380.0, 467.0, 153.0, 248.0 ],
+					"patching_rect" : [ 380.0, 467.0, 156.0, 234.0 ],
 					"text" : "Three worlds that the server can generate:\n\nNature: ocean/rain, chirps, wind.\n\nChameleon: user-controllable trio with DDSP (neural network) generated timbres.\n\nNineteen: An exploration of chameleon and timbre interpolation in 19-semitone space. User can control a synthesizer mapped to 19 instead of 12 semitones."
 				}
 
@@ -109,7 +57,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 903.0, 574.406738500000074, 237.0, 100.0 ],
+					"patching_rect" : [ 903.0, 574.406738500000074, 239.0, 100.0 ],
 					"text" : "On the server, manually programmed sequences of events, synchronized to either the frame-level or the clock-level are sent back and forth. Instrument abstractions are created to allow for different parameters and varying control of polyphony/stage reverb."
 				}
 
@@ -129,11 +77,11 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-71",
-					"linecount" : 23,
+					"linecount" : 22,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 896.0, 241.0, 236.0, 315.0 ],
+					"patching_rect" : [ 896.0, 241.0, 239.0, 301.0 ],
 					"text" : "/stage_cmd: Message issuing commands to RBFI. Allows server to create/move/clear virtual speakers as well as the audio focus.\n\n/p*m*: Each of these messages is mapped to a monophonic oscillator bank/audio subpatch (i.e. sinusoids~, resonators~, or something like rain/chirps). The server sends a message to each of these with three control bits (used to specify if we want sinusoids, resonators, or neither) and the timbre parameters (frequency, amplitude, decay triplets) to create a sound. Each poly_voice combines the monophonic voices into one polyphonic voice that is then mapped to a speaker in RBFI.\n\n/stage_reverb: The server can also control the reverb2 paremeters of the space. This is passed as a message list of (mix, size, decay, damping, diffusion) parameters."
 				}
 
@@ -2036,7 +1984,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-6", 1 ],
-					"order" : 1,
 					"source" : [ "obj-5", 1 ]
 				}
 
@@ -2044,23 +1991,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-6", 0 ],
-					"order" : 1,
-					"source" : [ "obj-5", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-81", 1 ],
-					"order" : 0,
-					"source" : [ "obj-5", 1 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-81", 0 ],
-					"order" : 0,
 					"source" : [ "obj-5", 0 ]
 				}
 
@@ -2162,27 +2092,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-3", 0 ],
 					"source" : [ "obj-7", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-87", 0 ],
-					"source" : [ "obj-81", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-81", 0 ],
-					"source" : [ "obj-84", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-81", 0 ],
-					"source" : [ "obj-86", 0 ]
 				}
 
 			}
