@@ -304,7 +304,6 @@ def nature_scene():
     radius = 0.3
     center_x, center_y = 0.5, 0.5
     for i in range(3):
-        print('add member')
         x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
         y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
         stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
@@ -324,15 +323,15 @@ def nature_scene():
     chirp.set_notes(send, [1, 1, 1])
 
     # Sweep
-    for coord in utils.spiral(0.3, 0.3, 1, 2000):
+    for coord in utils.spiral(0.3, 0.3, 1, 3000):
         stage.move(*coord)
     
-    for coord in utils.spiral(0.3, 0, 1, 100):
+    for coord in utils.spiral(0.3, 0, 1, 1000):
         stage.move(*coord)
 
     stage.listen = False
 
-    time.sleep(10)    
+    time.sleep(15)    
     # Rotate
     inner_radius = 0.2
     for theta in range(0, 2000):
@@ -346,7 +345,7 @@ def nature_scene():
             stage.modify_member('{}'.format(i), x, y, inner_radius, 0.4)
             time.sleep(0.005)
 
-    time.sleep(5)
+    time.sleep(20)
     # Cleanup
     wind.amps = [0 for a in wind.amps]
     wind.silence_nodes(send)
@@ -449,7 +448,6 @@ def chameleon_scene():
 
 def machine_scene():
     hard_reset()
-    print('hello world')
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
 
@@ -552,32 +550,29 @@ def machine_scene():
     # Push sequencer changes
     state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
 
-    # Sonic acrobatics
-    # Modify room reverb, timbre, RBFI, room focus
-    # Can modify bass, wind, piano
     stage.listen = True
 
     # Sweep
-    # for i in range(2):
-    #     for coord in utils.spiral(0, 0.5, 1, 1000):
-    #         stage.move(*coord)
+    for i in range(2):
+        for coord in utils.spiral(0, 0.5, 1, 1000):
+            stage.move(*coord)
 
-    #     for coord in utils.spiral(0.5, 0.3, 2, 1000):
-    #         stage.move(*coord)
+        for coord in utils.spiral(0.5, 0.3, 2, 1000):
+            stage.move(*coord)
         
-    #     for coord in utils.spiral(0.3, 0, 1, 1000):
-    #         stage.move(*coord)
+        for coord in utils.spiral(0.3, 0, 1, 1000):
+            stage.move(*coord)
 
-    # time.sleep(10)
-    # for i in range(1000):
-    #     stage.mix += 0.0005
-    #     stage.diffusion += 0.0001
-    #     stage.size += 0.001
-    #     stage.decay += 0.0001
-    #     stage.damping += 0.0001
-    #     piano.harmonicity -= 0.001
-    #     bass.harmonicity += 0.001
-    #     time.sleep(0.05)
+    time.sleep(10)
+    for i in range(1000):
+        stage.mix += 0.0005
+        stage.diffusion += 0.0001
+        stage.size += 0.001
+        stage.decay += 0.0001
+        stage.damping += 0.0001
+        piano.harmonicity -= 0.001
+        bass.harmonicity += 0.001
+        time.sleep(0.05)
 
     
     # Cleanup
@@ -613,7 +608,6 @@ def next_scene():
         hard_reset()
         scene = state['scene_queue'].pop(0)
         scene()
-        print('Scene began')
 
 
 def world(loop=True):
