@@ -40,7 +40,8 @@ state = {
     'clock_hooks': [], # functions called once a beat
     'clock_event_schedule': [], # queue of events to fire each beat
     'frame_hooks': [], # functions called once a frame
-    'frame_event_schedule': [] # continuous event queue (??)
+    'frame_event_schedule': [], # continuous event queue (??)
+    'midi_event_queue': [] # send midi signals back
 }
 
 
@@ -86,13 +87,51 @@ def _signal_handler(binding, *args):
 
 
 class MIDIController:
-    """User-controlled synth wrapper."""
+    """User-controlled monophonic synth wrapper."""
 
-    def __init__(self, input_binding='/midi', instrument):
+    def __init__(self, input_binding='/midi', instrument=None):
         self.binding = input_binding
         self.synth = instrument
+        self.connected = False
 
-    
+        self.note_on = False
+        self.note = -1
+
+        self.table = {}
+
+        state['frame_hooks'].append(lambda: self.update_state())
+
+    # Super hack
+    def update_state(self):
+        if self.binding in state['bindings'] and not self.connected:
+            self.connected = True
+            print('Connected to MIDI socket.')
+        if not self.connected: return
+
+        z = state['bindings'][self.binding]
+        if len(z) == 0: return
+
+        for note in self.table:
+            if time.time() - self.table[note][1] > 0.5:
+                self.table[note] = (0, time.time())
+
+        self.table[z[0]] = (z[1], time.time())
+
+        self.note_on = sum([a[0] for a in self.table.values()]) > 0
+        for note in self.table:
+            if self.table[note][0] > 0:
+                self.note = note
+                break
+
+        if self.connected:
+            self.fire_note()
+
+    def fire_note(self):
+        fundamental = symbolic.mtof(self.note) / 2
+        if self.note_on:
+            state['midi_event_queue'].append(lambda: self.synth.set_notes(send, fundamentals=[fundamental]))
+        else:
+            state['midi_event_queue'].append(lambda: self.synth.silence_nodes(send))
 
 
 class Stage:
@@ -121,10 +160,15 @@ class Stage:
 
         # Add relevant hooks that will fire every time step.
         state['clock_hooks'].append(self.reverb_hook)
+        state['clock_hooks'].append(self.listening_hook)
 
     def reverb_hook(self):
         """Function called every time step."""
         send(self.room, [self.mix * 100, self.size * 100, self.decay * 100, self.damping * 12000, self.diffusion])
+
+    def listening_hook(self):
+        """Update the user cursor so that stage changes propagate."""
+        self.move(self.x, self.y)
 
     def _dict_to_point_cmd(self, member_dict):
         return [member_dict['name']] + \
@@ -212,6 +256,10 @@ def frame_step():
         else:
             event()
 
+    if len(state['midi_event_queue']) > 0:
+        event = state['midi_event_queue'].pop(0)
+        event()
+
 
 def send(binding, value):
     """Send message to client."""
@@ -263,6 +311,16 @@ def world():
         for coord in utils.spiral(0.3, 0, 1, 10):
             stage.move(*coord)
 
+        # Rotate
+        # for theta in range(0, 100):
+        #     for i in range(3):
+        #         phase = theta / 1000.
+        #         radius -= 0.0001
+        #         x = radius * math.cos(i * 2 * math.pi / 3. + phase) + center_x
+        #         y = radius * math.sin(i * 2 * math.pi / 3. + phase) + center_y
+        #         stage.modify_member('{}'.format(i), x, y, 0.2, 0.4)
+        #         time.sleep(0.01)
+
         time.sleep(30)
         # Cleanup
         wind.amps = [0 for a in wind.amps]
@@ -288,20 +346,24 @@ def world():
             stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
 
         # Sweep
-        for coord in utils.spiral(0.3, 0.3, 2, 100):
+        for coord in utils.spiral(0.3, 0.3, 2, 1000):
             stage.move(*coord)
         
-        for coord in utils.spiral(0.3, 0, 1, 10):
+        for coord in utils.spiral(0.3, 0, 1, 1000):
             stage.move(*coord)
 
         rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3', '/p1m4'])
         rain.set_notes(send, [1, 1, 1, 1])
-
-        bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.5, components=10)
+        bass = instruments.ElectricBass(nodes=['/p2m1'], pluck=True, volume=0.6, components=7)
         piano = instruments.Vibraphone(nodes=['/p3m1', '/p3m2', '/p3m3', '/p3m4'], pluck=True, volume=0.3, components=10)
+        user = instruments.Organ(node='/p4m1', volume=2)
 
-        bmidi = [19, -1, 20, -1, 21, -1, 22, -1, -1, 20, -1, -1, 22, -1, -1, -1]
-        bmidi += [24, -1, 25, -1, 26, -1, 27, -1, -1, 22, -1, -1, 25, -1, -1, -1]
+        # Attach MIDI controller
+        midi = MIDIController(instrument=user)
+
+        # Set up step sequencers
+        bmidi = [19, -1, 20, -1, 21, -1, 22, -1, -1, 32, -1, -1, 34, -1, -1, -1]
+        bmidi += [24, -1, 25, -1, 26, -1, 27, -1, -1, 34, -1, -1, 37, -1, -1, -1]
         bmidi = bmidi * 6
 
         midi1 = [-1, -1, -1, -1, -1, -1, 92, -1, -1, 92, -1, -1, 92, -1, -1, -1]
@@ -318,20 +380,22 @@ def world():
 
         notes = []
         for i in bmidi:
-            notes.append([symbolic.mtof(i)])
+            notes.append([symbolic.mtof(i) * 2])
         bass_events = bass.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
 
         notes = []
         for a, b, c, d in midi:
-            notes.append([symbolic.mtof(a) / 64, symbolic.mtof(b) / 32, symbolic.mtof(c) / 32, symbolic.mtof(d) / 32])
+            notes.append([symbolic.mtof(a) / 8, symbolic.mtof(b) / 8, symbolic.mtof(c) / 8, symbolic.mtof(d) / 8])
         piano_events = piano.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
     
+        # Push sequencer changes
         state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
 
         # Cleanup
         state['clock_event_schedule'].append(lambda: bass.silence_nodes(send))
         state['clock_event_schedule'].append(lambda: piano.silence_nodes(send))
         state['clock_event_schedule'].append(lambda: rain.silence_nodes(send))
+        state['clock_event_schedule'].append(lambda: user.silence_nodes(send))
         state['clock_event_schedule'].append(lambda: stage.clear())
 
     # Scene 3

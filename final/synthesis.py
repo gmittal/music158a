@@ -22,13 +22,14 @@ def get_ddsp_parameters(path):
     return harmonic_dist
 
 
-def ddsp_additive_synth(f0, harmonic_distribution):
+def ddsp_additive_synth(f0, harmonic_distribution, amp_beta=1):
     """Additive synthesis based on DDSP (Engel et al., 2020).
     
     Args:
         f0: Fundamental frequency.
         harmonic_distribution: Relative frequencies of each oscillator
             (see get_ddsp_parameters)
+        amp_beta: Increase volume (use at your own risk).
     
     Returns:
         Parameters for sinusoids~ waveform.    
@@ -37,7 +38,7 @@ def ddsp_additive_synth(f0, harmonic_distribution):
     harmonic_distribution = harmonic_distribution.numpy().reshape(-1).astype(np.float32)
     ratios = np.linspace(1.0, float(num_osc), num_osc)        
     harmonic_freqs = f0 * ratios
-    harmonic_amps = harmonic_distribution
+    harmonic_amps = harmonic_distribution * amp_beta
     output = utils.interleave(list(harmonic_freqs), list(harmonic_amps))
     return [float(o) for o in output]  # required for OSC compatibility
 

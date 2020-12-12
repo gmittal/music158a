@@ -20,11 +20,11 @@ class Voice:
     def __init__(self, 
                  nodes=[],
                  mode='sinusoid', 
-                 harmonicity=None, 
-                 amplitudes=None, 
-                 decays=None,
+                 harmonicity=1, 
+                 amplitudes=[], 
+                 decays=[],
                  pluck=True,
-                 components=60,
+                 components=0,
                  ddsp_ckpt=None):
         self.init_mode = mode
         self.harmonicity = harmonicity
@@ -62,16 +62,16 @@ class Voice:
                                                                                             self.decays,
                                                                                             resonators=self.voices)
         elif mode == 'ddsp':
-            assert components == 60 and ddsp_ckpt is not None
+            assert ddsp_ckpt is not None
+            self.components = 60
             self.ddsp_params = synthesis.get_ddsp_parameters(ddsp_ckpt)
-            self.timbre_fn = lambda fundamental: self.control_bits + synthesis.ddsp_additive_synth(fundamental, self.ddsp_params)
+            self.timbre_fn = lambda fundamental: self.control_bits + synthesis.ddsp_additive_synth(fundamental, self.ddsp_params, amp_beta=self.amps[0])
         else:
             raise ValueError(f'Unsupported mode: {mode}')
 
     def set_notes(self, send_fn, fundamentals=[]):
         """Play fundamentals in parallel (polyphonic)."""
         assert 1 <= len(fundamentals) <= len(self.nodes), 'Invalid number of notes.'
-        
         for i, fundamental in enumerate(fundamentals):
             node = self.nodes[i]
             if fundamental == 0:  # HACK: MIDI "no event"
@@ -81,7 +81,8 @@ class Voice:
 
     def silence_nodes(self, send_fn):
         """Silence all nodes attached to this instrument."""
-        self.set_notes(send_fn, fundamentals=[1e-3] * len(self.nodes))
+        for node in self.nodes:
+            send_fn(node, self.control_bits + [0, 0])
 
     def play_sequence(self, send_fn, event_queue, notes=[[1]], events=False):
         """Plays sequence at the granularity of the clock."""
@@ -94,16 +95,6 @@ class Voice:
         if not events:
             event_queue.extend(events)
         return events
-
-
-class Percussion(Voice):
-    """Beat machine."""
-    
-    def __init__(self):
-        pass
-
-    def play_notes(self):
-        pass
 
 
 class ElectricBass(Voice):
@@ -142,8 +133,28 @@ class Vibraphone(ElectricBass):
                          pluck=pluck, 
                          volume=volume, 
                          components=components)
-        self.harmonicity = 4
-        self.decays = [0.5 for _ in range(components)]
+        self.harmonicity = 1
+        self.decays = [(i * 3 + 1) * 0.15 for i in range(components)]
+
+
+class TenorSaxophone(Voice):
+    def __init__(self, node=None, volume=1):
+        super().__init__(nodes=[node], mode='ddsp', ddsp_ckpt='./timbres/tenor_sax.pkl', components=1, harmonicity=1, amplitudes=volume)
+
+
+class Organ(Voice):
+    def __init__(self, node=None, volume=1):
+        super().__init__(nodes=[node], mode='ddsp', ddsp_ckpt='./timbres/flute2.pkl', components=1, harmonicity=1, amplitudes=volume)
+
+
+class Flute(Voice):
+    def __init__(self, node=None, volume=1):
+        super().__init__(nodes=[node], mode='ddsp', ddsp_ckpt='./timbres/violin.pkl', components=1, harmonicity=1, amplitudes=volume)
+
+
+class Saw(Voice):
+    def __init__(self, node=None, volume=1):
+        super().__init__(nodes=[node], mode='ddsp', ddsp_ckpt='./timbres/trumpet.pkl', components=1, harmonicity=1, amplitudes=volume)
 
 
 class Wind(Voice):
