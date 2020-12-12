@@ -1,5 +1,6 @@
 """Control tower."""
 
+import copy
 import math
 import random
 import time
@@ -26,7 +27,7 @@ flags.DEFINE_integer('client_port', 7000, 'OSC client port.')
 flags.DEFINE_string('server_ip', '127.0.0.1', 'OSC server IP address.')
 flags.DEFINE_integer('server_port', 8000, 'OSC server port.')
 flags.DEFINE_boolean('verbose', False, 'Log all OSC commands.')
-flags.DEFINE_boolean('loop', True, 'Loop the world.')
+flags.DEFINE_enum('stage', 'nature', ['nature', 'chameleon', 'strange'], 'Choose a stage.')
 
 # Stage(s) use the following information 
 # to keep in touch with Max/MSP.
@@ -42,8 +43,12 @@ state = {
     'clock_event_schedule': [], # queue of events to fire each beat
     'frame_hooks': [], # functions called once a frame
     'frame_event_schedule': [], # continuous event queue (??)
-    'midi_event_queue': [] # send midi signals back
+    'midi_event_queue': [], # send midi signals back
+    'echo_queue': [],
+    'scene_queue': []
 }
+
+init_state = {}
 
 
 def _time_handler(binding, beat):
@@ -84,6 +89,7 @@ def _signal_handler(binding, *args):
         print('Connection successful.')
         state['start_time'] = time.time()
         state['connected'] = True
+        init_state = copy.deepcopy(state)
     state['bindings'][binding] = args
 
 
@@ -271,6 +277,10 @@ def frame_step():
         event = state['midi_event_queue'].pop(0)
         event()
 
+    if len(state['echo_queue']) > 0:
+        event = state['echo_queue'].pop(0)
+        event()
+
 
 def send(binding, value):
     """Send message to client."""
@@ -280,6 +290,7 @@ def send(binding, value):
 
 
 def nature_scene():
+    hard_reset()
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
     
@@ -293,6 +304,7 @@ def nature_scene():
     radius = 0.3
     center_x, center_y = 0.5, 0.5
     for i in range(3):
+        print('add member')
         x = radius * math.cos(i * 2 * math.pi / 3.) + center_x
         y = radius * math.sin(i * 2 * math.pi / 3.) + center_y
         stage.add_member('{}'.format(i), x, y, 0.2, 0.4)
@@ -334,16 +346,18 @@ def nature_scene():
             stage.modify_member('{}'.format(i), x, y, inner_radius, 0.4)
             time.sleep(0.005)
 
-    time.sleep(30)
+    time.sleep(5)
     # Cleanup
     wind.amps = [0 for a in wind.amps]
     wind.silence_nodes(send)
     rain.silence_nodes(send)
     chirp.silence_nodes(send)
     stage.clear()
+    state['clock_event_schedule'].append(next_scene)
 
 
 def chameleon_scene():
+    hard_reset()
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
     
@@ -394,10 +408,10 @@ def chameleon_scene():
     midi4 += [-1, -1, -1, -1, -1, -1, 99, -1, -1, 99, -1, -1, 99, -1, -1, -1]
 
     midi = list(zip(midi1, midi2, midi3, midi4))
-    midi = midi * 10
+    midi = midi * 30
 
-    piano_factor = 16
-    bass_factor = 2
+    piano_factor = 8
+    bass_factor = 0.5
 
     notes = []
     for i in bmidi:
@@ -411,6 +425,10 @@ def chameleon_scene():
 
     # Push sequencer changes
     state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
+
+    # Push back frames
+    for _ in range(1000):
+        state['frame_event_schedule'].append(lambda: 1)
 
     # Change stage parameters
     def shift():
@@ -426,12 +444,15 @@ def chameleon_scene():
     state['clock_event_schedule'].append(lambda: rain.silence_nodes(send))
     state['clock_event_schedule'].append(lambda: user.silence_nodes(send))
     state['clock_event_schedule'].append(lambda: stage.clear())
+    state['clock_event_schedule'].append(next_scene)
 
 
 def machine_scene():
+    hard_reset()
+    print('hello world')
     stage = Stage('/stage_cmd', '/stage_reverb')
     stage.clear()
-    
+
     # Set up stage
     stage.mix = 0
     stage.size = 0
@@ -439,32 +460,40 @@ def machine_scene():
     stage.damping = 0
     stage.diffusion = 0
 
-    radius = 0.3
+    radius = 0.4
     center_x, center_y = 0.5, 0.5
     for i in range(4):
-        x = radius * math.cos(i * 2 * math.pi / 4.) + center_x
-        y = radius * math.sin(i * 2 * math.pi / 4.) + center_y
+        x = radius * math.cos(i * 2 * math.pi / 6.) + center_x
+        y = radius * math.sin(i * 2 * math.pi / 6.) + center_y
         stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
 
     stage.listen = False
 
     # P1
     rain = instruments.Rain(nodes=['/p1m1', '/p1m2', '/p1m3'])  # immutable
+    rain.silence_nodes(send)
     bass = instruments.ElectricBass(nodes=['/p1m4'], pluck=True, volume=0.2, components=7)  # mutable
+    bass.silence_nodes(send)
     rain.set_notes(send, [1, 1, 1])
 
     # P2 (mutable)
     piano = instruments.Vibraphone(nodes=['/p2m1', '/p2m2', '/p2m3', '/p2m4'], pluck=True, volume=0.05, components=10)
-    
+    piano.silence_nodes(send)
+
     # P3
     receiver1 = instruments.TenorSaxophone(node='/p3m1', volume=0.2)  # immutable
     receiver2 = instruments.TenorSaxophone(node='/p3m2', volume=0.4)  # immutable
     wind = instruments.Wind(nodes=['/p3m3', '/p3m4'], components=100)  # mutable
+    wind.silence_nodes(send)
+    receiver1.silence_nodes(send)
+    receiver2.silence_nodes(send)
     wind.set_notes(send, [220, 90])
 
     # P4 (immutable)
     user = instruments.Organ(node='/p4m1', volume=1)
     chirp = instruments.Chirps(nodes=['/p4m2', '/p4m3', '/p4m4'])
+    chirp.silence_nodes(send)
+    user.silence_nodes(send)
     chirp.set_notes(send, [1, 1, 1])
 
     # Attach MIDI controller
@@ -476,21 +505,21 @@ def machine_scene():
         while len(midi_f0) > 0:            
             f0 = midi_f0.pop(0)
             hook = lambda f0: lambda: receiver1.set_notes(send, fundamentals=[f0])
-            state['frame_event_schedule'].append(hook(f0))
+            state['echo_queue'].append(hook(f0))
             for i in range(10):
-                state['frame_event_schedule'].append(lambda: 1)
-                state['frame_event_schedule'].append(lambda: 1)
-                state['frame_event_schedule'].append(lambda: 1)
+                state['echo_queue'].append(lambda: 1)
+                state['echo_queue'].append(lambda: 1)
+                state['echo_queue'].append(lambda: 1)
             hook = lambda: receiver1.silence_nodes(send)
-            state['frame_event_schedule'].append(hook)
+            state['echo_queue'].append(hook)
             hook = lambda f0: lambda: receiver2.set_notes(send, fundamentals=[f0 * 2])
-            state['frame_event_schedule'].append(hook(f0))
+            state['echo_queue'].append(hook(f0))
             for i in range(10):
-                state['frame_event_schedule'].append(lambda: 1)
-                state['frame_event_schedule'].append(lambda: 1)
-                state['frame_event_schedule'].append(lambda: 1)
+                state['echo_queue'].append(lambda: 1)
+                state['echo_queue'].append(lambda: 1)
+                state['echo_queue'].append(lambda: 1)
             hook = lambda: receiver2.silence_nodes(send)
-            state['frame_event_schedule'].append(hook)
+            state['echo_queue'].append(hook)
     state['frame_hooks'].append(catch_midi)
 
     # Set up step sequencers
@@ -508,7 +537,7 @@ def machine_scene():
     midi4 += [81, -1, -1, 82, -1, -1, 84, -1, -1, 91, -1, -1, 94, -1, -1, -1]
 
     midi = list(zip(midi1, midi2, midi3, midi4))
-    midi = midi * 4
+    midi = midi * 30
 
     notes = []
     for i in bmidi:
@@ -528,6 +557,29 @@ def machine_scene():
     # Can modify bass, wind, piano
     stage.listen = True
 
+    # Sweep
+    # for i in range(2):
+    #     for coord in utils.spiral(0, 0.5, 1, 1000):
+    #         stage.move(*coord)
+
+    #     for coord in utils.spiral(0.5, 0.3, 2, 1000):
+    #         stage.move(*coord)
+        
+    #     for coord in utils.spiral(0.3, 0, 1, 1000):
+    #         stage.move(*coord)
+
+    # time.sleep(10)
+    # for i in range(1000):
+    #     stage.mix += 0.0005
+    #     stage.diffusion += 0.0001
+    #     stage.size += 0.001
+    #     stage.decay += 0.0001
+    #     stage.damping += 0.0001
+    #     piano.harmonicity -= 0.001
+    #     bass.harmonicity += 0.001
+    #     time.sleep(0.05)
+
+    
     # Cleanup
     state['clock_event_schedule'].append(lambda: state['frame_hooks'].pop())
     state['clock_event_schedule'].append(lambda: bass.silence_nodes(send))
@@ -537,26 +589,43 @@ def machine_scene():
     state['clock_event_schedule'].append(lambda: chirp.silence_nodes(send))
     state['clock_event_schedule'].append(lambda: wind.silence_nodes(send))
     state['clock_event_schedule'].append(lambda: stage.clear())
+    state['clock_event_schedule'].append(next_scene)
+
+
+def hard_reset():
+    keys = {
+        'clock_hooks': [], # functions called once a beat
+        'clock_event_schedule': [], # queue of events to fire each beat
+        'frame_hooks': [], # functions called once a frame
+        'frame_event_schedule': [], # continuous event queue (??)
+        # 'midi_event_queue': [], # send midi signals back
+        # 'echo_queue': [],
+    }
+    for key in keys:
+        state[key] = []
+    z = copy.deepcopy(init_state)
+    for key in z:
+        state[key] = z[key]
+
+
+def next_scene():
+    if len(state['scene_queue']) > 0:
+        hard_reset()
+        scene = state['scene_queue'].pop(0)
+        scene()
+        print('Scene began')
 
 
 def world(loop=True):
-    scenes = [True, True, False] # TODO: schedule these behind each other
 
-    i = 0
-    while i < 1 or FLAGS.loop:
-        # Scene 1
-        if scenes[0]:
-            nature_scene()
-
-        # Scene 2
-        if scenes[1]:
-            chameleon_scene()
-
-        # Scene 3
-        if scenes[2]:
-            machine_scene()
-
-        i += 1
+    if FLAGS.stage == 'nature':
+        state['scene_queue'].append(nature_scene)
+    elif FLAGS.stage == 'chameleon':
+        state['scene_queue'].append(chameleon_scene)
+    elif FLAGS.stage == 'strange':
+        state['scene_queue'].append(machine_scene)
+    
+    next_scene()
 
 
 def main(argv):
