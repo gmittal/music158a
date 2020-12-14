@@ -45,7 +45,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 380.0, 467.0, 156.0, 234.0 ],
+					"patching_rect" : [ 380.0, 467.0, 159.0, 234.0 ],
 					"text" : "Three worlds that the server can generate:\n\nNature: ocean/rain, chirps, wind.\n\nChameleon: user-controllable trio with DDSP (neural network) generated timbres.\n\nNineteen: An exploration of chameleon and timbre interpolation in 19-semitone space. User can control a synthesizer mapped to 19 instead of 12 semitones."
 				}
 
@@ -77,11 +77,11 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-71",
-					"linecount" : 22,
+					"linecount" : 21,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 896.0, 241.0, 239.0, 301.0 ],
+					"patching_rect" : [ 896.0, 241.0, 242.0, 288.0 ],
 					"text" : "/stage_cmd: Message issuing commands to RBFI. Allows server to create/move/clear virtual speakers as well as the audio focus.\n\n/p*m*: Each of these messages is mapped to a monophonic oscillator bank/audio subpatch (i.e. sinusoids~, resonators~, or something like rain/chirps). The server sends a message to each of these with three control bits (used to specify if we want sinusoids, resonators, or neither) and the timbre parameters (frequency, amplitude, decay triplets) to create a sound. Each poly_voice combines the monophonic voices into one polyphonic voice that is then mapped to a speaker in RBFI.\n\n/stage_reverb: The server can also control the reverb2 paremeters of the space. This is passed as a message list of (mix, size, decay, damping, diffusion) parameters."
 				}
 

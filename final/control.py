@@ -409,8 +409,8 @@ def chameleon_scene():
     midi = list(zip(midi1, midi2, midi3, midi4))
     midi = midi * 30
 
-    piano_factor = 8
-    bass_factor = 0.5
+    piano_factor = 16
+    bass_factor = 2
 
     notes = []
     for i in bmidi:
@@ -537,14 +537,17 @@ def machine_scene():
     midi = list(zip(midi1, midi2, midi3, midi4))
     midi = midi * 30
 
+    bass_factor = 0.25
+    piano_factor = 1
+    
     notes = []
     for i in bmidi:
-        notes.append([symbolic.mtof(i, 19)])
+        notes.append([symbolic.mtof(i, 19) * bass_factor])
     bass_events = bass.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
 
     notes = []
     for a, b, c, d in midi:
-        notes.append([symbolic.mtof(a, 19) * 2, symbolic.mtof(b, 19) * 2, symbolic.mtof(c, 19) * 2, symbolic.mtof(d, 12) * 2])
+        notes.append([symbolic.mtof(a, 19) * piano_factor, symbolic.mtof(b, 19) * piano_factor, symbolic.mtof(c, 19) * piano_factor, symbolic.mtof(d, 12) * piano_factor])
     piano_events = piano.play_sequence(send, state['clock_event_schedule'], notes=notes, events=True)
 
     # Push sequencer changes
