@@ -323,16 +323,17 @@ def nature_scene():
     chirp.set_notes(send, [1, 1, 1])
 
     # Sweep
-    for coord in utils.spiral(0.3, 0.3, 1, 3000):
+    for coord in utils.spiral(0.3, 0.3, 1, 5000):
         stage.move(*coord)
     
-    for coord in utils.spiral(0.3, 0, 1, 1000):
+    for coord in utils.spiral(0.3, 0, 1, 2500):
         stage.move(*coord)
 
     stage.listen = False
 
-    time.sleep(15)    
+    time.sleep(30)    
     # Rotate
+    radius = 0.3
     inner_radius = 0.2
     for theta in range(0, 2000):
         for i in range(3):
@@ -375,10 +376,10 @@ def chameleon_scene():
         stage.add_member('{}'.format(i), x, y, 0.1, 0.4)
 
     # Sweep
-    for coord in utils.spiral(0.3, 0.3, 2, 1000):
+    for coord in utils.spiral(0.3, 0.3, 2, 2000):
         stage.move(*coord)
     
-    for coord in utils.spiral(0.3, 0, 1, 1000):
+    for coord in utils.spiral(0.3, 0, 1, 2000):
         stage.move(*coord)
 
     stage.listen = False
@@ -407,10 +408,10 @@ def chameleon_scene():
     midi4 += [-1, -1, -1, -1, -1, -1, 99, -1, -1, 99, -1, -1, 99, -1, -1, -1]
 
     midi = list(zip(midi1, midi2, midi3, midi4))
-    midi = midi * 30
+    midi = midi * 50
 
-    piano_factor = 16
-    bass_factor = 2
+    piano_factor = 8
+    bass_factor = 0.5
 
     notes = []
     for i in bmidi:
@@ -426,8 +427,8 @@ def chameleon_scene():
     state['clock_event_schedule'].extend(list(zip(bass_events, piano_events)))
 
     # Push back frames
-    for _ in range(1000):
-        state['frame_event_schedule'].append(lambda: 1)
+    # for _ in range(100):
+    #     state['frame_event_schedule'].append(lambda: 1)
 
     # Change stage parameters
     def shift():
@@ -537,7 +538,7 @@ def machine_scene():
     midi = list(zip(midi1, midi2, midi3, midi4))
     midi = midi * 30
 
-    bass_factor = 0.25
+    bass_factor = 0.5
     piano_factor = 1
     
     notes = []
